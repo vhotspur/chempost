@@ -1,0 +1,13 @@
+# Dist archives
+chempost-*.tar.gz
+
+# Generated MPS figures...
+*.mps
+sample.mp
+# ... and MetaPost auxilary files
+mptextmp.*
+*.log
+
+# Ignore the Parser generated files
+Parser.output
+lib/Chemistry/Chempost/Parser.pm
