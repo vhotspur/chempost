@@ -1,0 +1,110 @@
+ChemPost -- MetaPost based drawer of organical chemical formulas
+
+ChemPost is a program for creating nice looking formulas of organical
+compounds. The formula is drawn using special language that describes
+the nodes and the direction of the bonds in the picture rather than
+their position.
+
+
+
+Compiling
+=========
+Before running MetaPost, the gramatical parser needs to be created.
+Running `make' will do the trick.
+
+
+
+Running
+=======
+First, try `make sample' which will create several examples. For your own
+experimenting, launch the `./chempost.pl' script: it expects the formula
+description on standard input. It will print corresponding MetaPost script
+to standard output. Thus, typical session will look like this (assuming
+formulas.chmp is the file with your formula descriptions):
+$ ./chempost.pl <formulas.chmp >formulas.mp
+$ mpost --mem=mpost --tex=latex formulas.mp
+
+
+
+The language
+============
+This part will be extended in the future :-).
+Each file could contain description of several formulas, each formula
+is a block of following format:
+
+formula_identifier "optional formula description in quotes" {
+	semicolon separated list of commands
+};
+
+The commands comes in two flavours. First, there are commands for node
+description that tells how the node looks like and what is its number
+(each node in the formula must have a unique number).
+Next, commands for joining the nodes. These commands refers to the nodes
+via their numbers and specify only the angle of the bond (and its type,
+of course). Thus, commands
+	
+	node(1, "H3C");
+	node(2, "CH3");
+
+creates two nodes and
+
+	bond(1, 2, single, 0);
+
+creates single bond between them, going from 1 to 2 under angle 0, i.e.
+horizontally. Command
+
+	bond(2, 1, single, 180);
+
+would have the same effect (notice the reversed angle with swapped node
+order).
+Altogether, these commands would create a nice looking picture of ethane.
+See file sample.chmp for more examples.
+
+
+
+Other stuff
+===========
+
+Software requirements
+---------------------
+* PERL (http://www.perl.org/)
+* PERL module Parse::Yapp (http://search.cpan.org/~fdesar/Parse-Yapp-1.05/lib/Parse/Yapp.pm)
+* PERL module Parse::Lex (http://search.cpan.org/~pscust/ParseLex-2.18/lib/Parse/Lex.pm)
+* MetaPost (http://www.tug.org/metapost.html)
+* some decent PostScript viewer and optionally the `make' utility
+
+Why another formula drawing program?
+------------------------------------
+There are several reasons for this.
+First, most of the programs available are interactive and user actually draws
+the formula by moving the mouse pointer around. That is cool as you can
+immediately see the result but most of the programs create only raster output
+(PNG mostly) or does not allow you to specify distance between the nodes or
+create "way too advanced" formulas (e.g. with ommited C atoms etc.).
+Okay, there are SMILES and similar notations that are a) more compact
+b) standardized for creating pictures from plain text, I (almost) hear you
+say. Well, most of the program has the same flaws (some could be considered
+features, depending on point of view and intended audience for the pictures):
+poor quality of output (it is indeed a bad idea to insert PNG into LaTeX
+if you could create something vector and scalable) and, especially, very
+little control of the resulting structure of the drawn formula.
+Again, most of the outputs are intended for specialists that have no problem
+in understanding that compound made of two strokes is actually a propane,
+but for high-school students, 'H3C-CH2-CH3' is far more understandable.
+And it is not only about missing C atoms but also about drawing the
+formula more right-angled because it is usually easier to understand the
+naming principles etc. on these than on the "naturally" looking ones.
+
+I have an idea how to improve the grammar. Do you want to hear it?
+------------------------------------------------------------------
+Absolutely. The current look-and-feel of the grammar is not perfect and
+probably could be made more compact together with some guessing of some
+angles. If you have any idea how to achieve this, write me an e-mail or
+write a patch :-).
+I am still wondering how to create a decent convertor from SMILES that
+would create output fitting my needs (especially creating the high-school
+right-angled versions). Any help on this would be greatly appreciated.
+
+Contact
+-------
+Vojtech Horky <see e-mail at http://github.com/vhotspur>
