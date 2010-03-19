@@ -14,9 +14,20 @@ sub new {
 sub _formatCaption {
 	my ( $this, $caption ) = @_;
 
+	
+	# special cases
+	if ($caption eq "OH") {
+		return ( "", "\\text{O}", "\\text{H}" );
+	}
+	if ($caption eq "NH2") {
+		return ( "", "\\text{N}", "\\text{H}_2" );
+	}
+	
+	# otherwise, try to split it around 'C' atom and
+	# format the numbers as subscripts
 	my @parts = ( "", "", "" );
 	my $currentPart = 0;
-
+	
 	while ($caption =~ /^([A-Z][a-z]*)(([1-9][0-9]*)?)(.*)/) {
 		my ( $element, $count, $remainder ) = ( $1, $2, $4 );
 
