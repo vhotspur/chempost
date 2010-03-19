@@ -1,0 +1,9 @@
+cyclopentane {
+	cyclic("1-2-3-4-5-", 0);
+};
+
+cyclohexanol {
+	cyclic("1-2-3-4-5-6-", 90);
+	node(7, "OH");
+	bond(2, 7, single, 30);
+};

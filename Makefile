@@ -29,7 +29,7 @@ all: compile
 
 .PHONY: all \
 	compile \
-	sample \
+	sample cycles \
 	dist \
 	clean distclean
 
@@ -41,9 +41,11 @@ run: compile
 sample: sample.mp
 	$(MPOST) $<
 
-sample.mp: chempost.pl $(LIB_SOURCES_ALL)
-	$(PERL) ./chempost.pl <sample.chmp >$@
+cycles: cycles.mp
+	$(MPOST) $<
 
+%.mp: chempost.pl $(LIB_SOURCES_ALL) %.chmp
+	$(PERL) ./chempost.pl <$*.chmp >$@
 
 $(PARSER_MODULE): Parser.y
 	@# this one is run to show the errors of the grammar
@@ -58,7 +60,7 @@ $(PARSER_MODULE): Parser.y
 
 clean:
 	$(RM) mptextmp.*
-	$(RM) sample.mp sample.log
+	$(RM) sample.mp cycles.mp sample.log cycles.log
 	$(RM) Parser.output
 
 distclean: clean

@@ -12,8 +12,11 @@ use Chemistry::Chempost::Parser;
 my @token = (
 	'NODE', 'node',
 	'BOND', 'bond',
+	'CYCLIC', 'cyclic',
+	
 	'UNBOND', 'unbond',
 	'BOND_KIND', 'single|double',
+	
 	'LBRACKET', '[\[]',
 	'RBRACEKT', '[\]]',
 	'LBRACE', '[\{]',
