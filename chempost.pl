@@ -95,6 +95,18 @@ TEXPOST(
 
 unit := 1cm;
 
+%% Backward-compatible routine for setting output template name.
+% @param string fname Filename to use.
+%
+def setoutputfilename(expr fname) =
+	if scantokens(mpversion) < 1.200:
+		filenametemplate
+	else:
+		outputtemplate :=
+	fi
+	fname;
+enddef;
+
 EOF_HEADER
 
 my $scriptFooter = <<EOF_FOOTER;

@@ -49,7 +49,7 @@ compound:
 
 		my $result = "\n\n\n";
 		$result .= sprintf("%% %s\n", $T1->{"name"});
-		$result .= sprintf("outputtemplate := \"%s.mps\";\n", $T1->{"id"});
+		$result .= sprintf("setoutputfilename(\"%s.mps\");\n", $T1->{"id"});
 		$result .= sprintf("beginfig(0);\n");
 		$result .= $generator->generateMetaPost();
 		$result .= sprintf("endfig;\n\n");
