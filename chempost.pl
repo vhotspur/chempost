@@ -69,8 +69,10 @@ sub yyerror {
 }
 
 
-my $parser = new Parser();
 $lexer->from($input);
+
+my $parser = new Parser();
+$parser->init();
 my $scriptBody = $parser->YYParse(
 	yylex => &getyylex($lexer),
 	yyerror => \&yyerror,
