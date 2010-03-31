@@ -198,6 +198,9 @@ def drawbond(expr start_coords, bond_type, bond_len, angle, drawit) =
 				draw (0,0) -- (bond_len, 0);
 				draw (0, +bondgap) -- (bond_len, +bondgap);
 			elseif bond_type = 4:
+				draw (bondgap/2, +bondgap) -- (bond_len-bondgap/2, +bondgap);
+				draw (0,0) -- (bond_len, 0);
+			elseif bond_type = 5:
 				draw (bondgap/2, -bondgap) -- (bond_len-bondgap/2, -bondgap);
 				draw (0,0) -- (bond_len, 0);
 			else:

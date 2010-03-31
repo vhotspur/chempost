@@ -31,6 +31,12 @@ sub _bondNumber {
 		return 1;
 	} elsif ($kind eq "double") {
 		return 2;
+	} elsif ($kind eq "triple") {
+		return 3;
+	} elsif ($kind eq "aromatic") {
+		return 4;
+	} elsif ($kind eq "aromatic2") {
+		return 5;
 	} else {
 		return 1;
 	}

@@ -7,3 +7,10 @@ cyclohexanol {
 	node(7, "OH");
 	bond(2, 7, single, 30);
 };
+
+phenol {
+	cyclic("1-2:3-4:5-6:", 90);
+	node(7, "OH");
+	bond(3, 7, single, 90);
+};
+

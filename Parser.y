@@ -136,7 +136,7 @@ compound_command_cyclic:
 		my $angle = $T5;
 		
 		# verify that it is of form 1-2=3-4-
-		unless ($description =~ /^([1-9][0-9]*[-=#])+$/) {
+		unless ($description =~ /^([1-9][0-9]*[-=#:])+$/) {
 			printf STDERR "Cyclic description invalid.\n";
 			return Builder->new();
 		}
@@ -144,7 +144,7 @@ compound_command_cyclic:
 		my @nodeNumbers = ();
 		my @bondTypes = ();
 		while ($description ne "") {
-			my ( $nodeId, $bond, $remaining ) = ($description =~ /^([1-9][0-9]*)([-=#])(.*)/);
+			my ( $nodeId, $bond, $remaining ) = ($description =~ /^([1-9][0-9]*)([-=#:])(.*)/);
 			
 			push @nodeNumbers, $nodeId;
 			
@@ -152,6 +152,8 @@ compound_command_cyclic:
 				$bond = "single";
 			} elsif ($bond eq "=") {
 				$bond = "double";
+			} elsif ($bond eq ":") {
+				$bond = "aromatic";
 			} else {
 				$bond = "triple";
 			}
@@ -179,6 +181,11 @@ compound_command_cyclic:
 		# this prevents the creation of a real cycle
 		# when this would be fixed in the Generator, this line
 		# could be amalgamated with the previous for-loop
+		# that would also include the awful workaround for aromatic bond
+		# where the direction is reversed :-(
+		if ($bondTypes[-1] eq "aromatic") {
+			$bondTypes[-1] = "aromatic2";
+		}
 		$builder->addBond($nodeNumbers[0], $nodeNumbers[-1], $bondTypes[-1], (180 + $angle) % 360);
 		
 		return $builder;
