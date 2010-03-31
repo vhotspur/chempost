@@ -10,8 +10,12 @@ use Chemistry::Chempost::Parser;
 
 
 my @token = (
+	'MACRODEF', 'define',
+	'COMPOUNDDEF', 'compound',
+	
 	'NODE', 'node',
 	'BOND', 'bond',
+	'DRAW', 'draw',
 	'CYCLIC', 'cyclic',
 	
 	'UNBOND', 'unbond',

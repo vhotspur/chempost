@@ -19,10 +19,10 @@ use Chemistry::Chempost::Generator;
 %%
 
 chempost:
-	compound_list {
+	macro_definitions compound_list {
 		my $result = "\n\n";
 		$result .= "\n\n";
-		$result .= $T1;
+		$result .= $T2;
 		return $result;
 	}
 	| error {
@@ -30,6 +30,29 @@ chempost:
 		 print STDERR Dumper $TT->YYCurval;
 		 print STDERR Dumper $TT->YYExpect;
 		 die "Parse error.";
+	}
+	;
+
+macro_definitions:
+	macro_definition_list {
+		return $T1;
+	}
+	| {
+		# empty
+	}
+	;
+
+macro_definition_list:
+	macro_definition {
+	}
+	| macro_definition_list macro_definition {
+	}
+	;
+
+macro_definition:
+	MACRODEF IDENTIFIER LPAREN NUMBER RPAREN
+		LBRACE compound_command_list RBRACE SEMICOLON {
+		
 	}
 	;
 
@@ -44,12 +67,12 @@ compound_list:
 	;
 
 compound:
-	compound_signature LBRACE compound_command_list RBRACE SEMICOLON {
-		my $generator = $T3->createGenerator();
+	COMPOUNDDEF compound_signature LBRACE compound_command_list RBRACE SEMICOLON {
+		my $generator = $T4->createGenerator();
 
 		my $result = "\n\n\n";
-		$result .= sprintf("%% %s\n", $T1->{"name"});
-		$result .= sprintf("setoutputfilename(\"%s.mps\");\n", $T1->{"id"});
+		$result .= sprintf("%% %s\n", $T2->{"name"});
+		$result .= sprintf("setoutputfilename(\"%s.mps\");\n", $T2->{"id"});
 		$result .= sprintf("beginfig(0);\n");
 		$result .= $generator->generateMetaPost();
 		$result .= sprintf("endfig;\n\n");
@@ -98,6 +121,9 @@ compound_command_aux:
 		return $T1;
 	}
 	| compound_command_cyclic {
+		return $T1;
+	}
+	| compound_command_draw {
 		return $T1;
 	}
 	;
@@ -189,6 +215,19 @@ compound_command_cyclic:
 		$builder->addBond($nodeNumbers[0], $nodeNumbers[-1], $bondTypes[-1], (180 + $angle) % 360);
 		
 		return $builder;
+	}
+	;
+
+compound_command_draw:
+	DRAW LPAREN IDENTIFIER COMMA NUMBER COMMA node_number_list RPAREN {
+		return Builder->new();
+	}
+	;
+
+node_number_list:
+	NUMBER {
+	}
+	| node_number_list COMMA NUMBER {
 	}
 	;
 
