@@ -13,9 +13,10 @@ compound phenol2 {
 };
 
 compound ocresol {
-	draw(phenol, 0, 1,2,3,4,5,6,7);
+	/* weird numbers only because of testing :-) */
+	draw(phenol, 0, 1,9,4,5,3,6,7);
 	node(8, "CH3");
-	bond(2, 8, single, 30);
+	bond(9, 8, single, 30);
 };
 
 compound mcresol {
@@ -29,4 +30,3 @@ compound pcresol {
 	node(8, "CH3");
 	bond(6, 8, single, 270);
 };
-

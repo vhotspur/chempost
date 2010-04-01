@@ -247,8 +247,19 @@ compound_command_draw:
 			return Builder->new();
 		}
 		
+		if (scalar(@nodeNumbers) != $macro->{"nodes"}) {
+			$TT->raiseError(sprintf("Invalid number of arguments for `%s'", $macroName));
+			return Builder->new();
+		}
+		
 		$TT->debug("Copying builder of `%s'.", $macroName);
-		my $builder = $macro->{"builder"}->copy();
+		my %mapping;
+		for (my $i = 1; $i <= $macro->{"nodes"}; $i++) {
+			$mapping{$i} = $nodeNumbers[$i - 1];
+		}
+		my $builder = $macro->{"builder"}->copyRemapped(\%mapping);
+		
+		
 		$TT->debug("Rotating `%s'.", $macroName);
 		$builder->rotate($angle);
 		

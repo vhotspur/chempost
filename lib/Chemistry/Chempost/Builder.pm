@@ -28,6 +28,25 @@ sub copy {
 	return $copy;
 }
 
+## Creates a deep copy with remapping.
+sub copyRemapped {
+	my ( $this, $nodeMapping ) = @_;
+	my $copy = Builder->new();
+
+	foreach my $id ( keys(%{$this->{"nodes"}}) ) {
+		$copy->_addNode($nodeMapping->{$id},
+			$this->{"nodes"}->{$id}->{"caption"});
+	}
+	
+	foreach my $bond ( @{$this->{"bonds"}}) {
+		my $from = $nodeMapping->{ $bond->{"from"} };
+		my $to = $nodeMapping->{ $bond->{"to"} };
+		$copy->addBond($from, $to, $bond->{"type"}, $bond->{"angle"});
+	}
+	
+	return $copy;
+}
+
 sub _formatCaption {
 	my ( $this, $caption ) = @_;
 
