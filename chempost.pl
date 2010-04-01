@@ -36,7 +36,7 @@ my @token = (
 	},
 	'IDENTIFIER', '[a-zA-z]\w+',
 
-	'COMMENT', '[\/][\*](.|\n)*[\*][\/]',
+	'COMMENT', '[\/][\*](.|\n)*?[\*][\/]',
 
 	'ANYTHING', '.',
 );
