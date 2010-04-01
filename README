@@ -32,7 +32,7 @@ This part will be extended in the future :-).
 Each file could contain description of several formulas, each formula
 is a block of following format:
 
-formula_identifier "optional formula description in quotes" {
+compound formula_identifier "optional formula description in quotes" {
 	semicolon separated list of commands
 };
 
@@ -59,6 +59,27 @@ would have the same effect (notice the reversed angle with swapped node
 order).
 Altogether, these commands would create a nice looking picture of ethane.
 See file sample.chmp for more examples.
+
+Macro definitions
+-----------------
+Currently, it is also possible to define simple macros to save-up
+repetetive typing. The macro definition has following format:
+
+define macro_identifier (number_of_nodes) {
+	semicolon separated list of commands
+};
+
+In the macro, the nodes must have numbers from 1 to number_of_nodes.
+
+The macro invocation is done through call to
+
+	draw(macro_identifier, angle, node_mapping);
+	
+where angle is the rotation of the whole subfigure and node_mapping is
+a list of actual nodes.
+
+See cresols.chmp for example how o-/m-/p-cresols were drawn using single
+macro to save-up typing.
 
 
 
