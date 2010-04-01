@@ -1,64 +1,15 @@
 #!/usr/bin/perl
 #
 
-require 5.005;
-use Parse::Lex;
-
 use Data::Dumper;
-#use Chemistry::Chempost::Generator;
 use Chemistry::Chempost::Parser;
+use Chemistry::Chempost::Lexer;
 
-
-my @token = (
-	'NODE', 'node',
-	'BOND', 'bond',
-	'CYCLIC', 'cyclic',
-	
-	'UNBOND', 'unbond',
-	'BOND_KIND', 'single|double',
-	
-	'LBRACKET', '[\[]',
-	'RBRACEKT', '[\]]',
-	'LBRACE', '[\{]',
-	'RBRACE', '[\}]',
-	'LPAREN', '[\(]',
-	'RPAREN', '[\)]',
-	'SEMICOLON', '[;]',
-	'COMMA', '[,]',
-
-	'NUMBER', '\d+',
-	'STRING', '"([^"]*)"', sub {
-		return $1;
-	},
-	'IDENTIFIER', '[a-zA-z]\w+',
-
-	'COMMENT', '[\/][\*](.|\n)*[\*][\/]',
-
-	'ANYTHING', '.',
-);
 
 my @lines = <STDIN>;
 my $input = join("", @lines);
 
-# Parse::Lex->trace;
-my $lexer = new Parse::Lex(@token);
-$lexer->skip('\s+');
-
-sub getyylex {
-  my $self = shift;
-  return sub {
-	my ( $value, $name, $token );
-	do {
-		$token = $self->next;
-		if ($self->eoi) {
-			return ("", undef);
-		}
-		$name = $token->name;
-	} while ($name eq 'COMMENT');
-	$value = $token->text;
-	return ($name, $value);
-  }
-}
+my $lexer = new Lexer();
 
 sub yyerror {
 	printf STDERR "yyerror()\n";
@@ -68,7 +19,7 @@ sub yyerror {
 my $parser = new Parser();
 $lexer->from($input);
 my $scriptBody = $parser->YYParse(
-	yylex => &getyylex($lexer),
+	yylex => $lexer->getyylex(),
 	yyerror => \&yyerror,
 	yydebug => 0);
 
@@ -99,7 +50,7 @@ TEXPOST(
 unit := 1cm;
 
 %% Backward-compatible routine for setting output template name.
-% @param string fname Filename to use.
+% \@param string fname Filename to use.
 %
 def setoutputfilename(expr fname) =
 	if scantokens(mpversion) < 1.200:
