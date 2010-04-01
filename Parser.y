@@ -20,10 +20,7 @@ use Chemistry::Chempost::Generator;
 
 chempost:
 	compound_list {
-		my $result = "\n\n";
-		$result .= "\n\n";
-		$result .= $T1;
-		return $result;
+		return $T1;
 	}
 	| error {
 		 print STDERR Dumper $TT->YYCurtok;
@@ -35,11 +32,13 @@ chempost:
 
 compound_list:
 	compound {
-		return $T1;
+		my @result = ( $T1 );
+		return \@result;
 	}
 	|
 	compound_list compound {
-		return $T1 . $T2;
+		my @result = ( @{$T1}, $T2 );
+		return \@result;
 	}
 	;
 
@@ -53,7 +52,13 @@ compound:
 		$result .= sprintf("beginfig(0);\n");
 		$result .= $generator->generateMetaPost();
 		$result .= sprintf("endfig;\n\n");
-		return $result;
+		
+		my %figure = (
+			"code" => $result,
+			"id" => $T1->{"id"},
+			"name" => $T1->{"name"},
+		);
+		return \%figure;
 	};
 
 compound_signature:

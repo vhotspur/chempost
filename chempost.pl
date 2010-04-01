@@ -4,26 +4,51 @@
 use Data::Dumper;
 use Chemistry::Chempost::Parser;
 use Chemistry::Chempost::Lexer;
+use Getopt::Std;
 
 
-my @lines = <STDIN>;
-my $input = join("", @lines);
+my %runOptions;
+getopts("g:", \%runOptions)
+	or die "Invalid invocation.";
 
-my $lexer = new Lexer();
+my %options = (
+	"generate-all" => 1,
+	"generate-only" => { },
+);
+
+if (exists $runOptions{"g"}) {
+	$options{"generate-all"} = 0;
+	foreach my $k ( split(/,+/, $runOptions{"g"}) ) {
+		$options{"generate-only"}->{$k} = 1;
+	}
+}
+
+my @inputLines;
+if (@ARGV > 0) {
+	if (@ARGV != 1) {
+		die "Too many input files.";
+	}
+	open(INPUT, $ARGV[0])
+		or die "Cannot open input file.";
+	@inputLines = <INPUT>;
+	close(INPUT);
+} else {
+	@inputLines = <STDIN>;
+}
 
 sub yyerror {
 	printf STDERR "yyerror()\n";
 }
 
+my $input = join("", @inputLines);
+my $lexer = new Lexer();
+$lexer->from($input);
 
 my $parser = new Parser();
-$lexer->from($input);
-my $scriptBody = $parser->YYParse(
+my $figures = $parser->YYParse(
 	yylex => $lexer->getyylex(),
 	yyerror => \&yyerror,
 	yydebug => 0);
-
-
 
 my $scriptHeader = <<EOF_HEADER;
 input TEX;
@@ -70,7 +95,13 @@ end
 EOF_FOOTER
 
 my $output = $scriptHeader;
-$output .= $scriptBody;
+
+foreach my $f ( @{$figures} ) {
+	if ($options{"generate-all"} or exists($options{"generate-only"}->{$f->{"id"}})) {
+		$output .= $f->{"code"};
+	}
+}
+
 $output .= $scriptFooter;
 
 print $output;
