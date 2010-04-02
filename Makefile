@@ -44,6 +44,9 @@ sample: sample.mp
 cycles: cycles.mp
 	$(MPOST) $<
 
+cresols: cresols.mp
+	$(MPOST) $<
+
 %.mp: chempost.pl $(LIB_SOURCES_ALL) %.chmp
 	$(PERL) ./chempost.pl <$*.chmp >$@
 
@@ -55,12 +58,12 @@ $(PARSER_MODULE): Parser.y
 	@# replace $T1 with $_[1] etc.
 	@# replace /dev/stdin by the original name
 	sed 's/\$$T\([1-9]\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
-		| $(YAPP) -sm Parser -o - /dev/stdin 2>/dev/null \
+		| $(YAPP) -m Parser -o - /dev/stdin 2>/dev/null \
 		| sed 's#/dev/stdin#$<#g' >$@
 
 clean:
 	$(RM) mptextmp.*
-	$(RM) sample.mp cycles.mp sample.log cycles.log
+	$(RM) sample.mp cycles.mp cresols.mp sample.log cycles.log cresols.log
 	$(RM) Parser.output
 
 distclean: clean
@@ -69,7 +72,8 @@ distclean: clean
 
 dist:
 	mkdir $(DISTNAME)
-	cp Makefile ChemPost.mp Parser.y chempost.pl sample.chmp $(DISTNAME)
+	cp Makefile ChemPost.mp Parser.y chempost.pl $(DISTNAME)
+	cp sample.chmp cycles.chmp cresols.chmp $(DISTNAME)
 	mkdir -p $(DISTNAME)/$(LOCAL_LIB)/$(PACKAGE)
 	cp $(LIB_SOURCES) $(DISTNAME)/$(LOCAL_LIB)/$(PACKAGE)/
 	tar -czf $(ARCHIVE) $(DISTNAME)

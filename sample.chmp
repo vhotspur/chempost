@@ -1,4 +1,4 @@
-propane {
+compound propane {
 	node(1, "H3C");
 	node(2, "CH2");
 	node(3, "CH3");
@@ -6,7 +6,7 @@ propane {
 	bond(2, 3, single, 0);
 };
 
-isobutane {
+compound isobutane {
 	node(1, "H3C");
 	node(2, "CH2");
 	node(4, "CH3");

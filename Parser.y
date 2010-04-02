@@ -19,14 +19,51 @@ use Chemistry::Chempost::Generator;
 %%
 
 chempost:
-	compound_list {
-		return $T1;
+	macro_definitions compound_list {
+		return $T2;
 	}
 	| error {
 		 print STDERR Dumper $TT->YYCurtok;
 		 print STDERR Dumper $TT->YYCurval;
 		 print STDERR Dumper $TT->YYExpect;
 		 die "Parse error.";
+	}
+	;
+
+macro_definitions:
+	macro_definition_list {
+		# no action here, changes done directly to $TT
+		return 0;
+	}
+	| {
+		# empty
+		# no action here, changes done directly to $TT
+		return 0;
+	}
+	;
+
+macro_definition_list:
+	macro_definition {
+		# no action here, changes done directly to $TT
+		return 0;
+	}
+	| macro_definition_list macro_definition {
+		# no action here, changes done directly to $TT
+		return 0;
+	}
+	;
+
+macro_definition:
+	MACRODEF IDENTIFIER LPAREN NUMBER RPAREN
+			LBRACE compound_command_list RBRACE SEMICOLON {
+		my $name = $T2;
+		my $nodeCount = $T4;
+		my $builder = $T7;
+		
+		$TT->_addMacro($name, $nodeCount, $builder);
+		$TT->debug("Defined macro `%s'.", $name);
+		# returning name although it is not used anywhere
+		return $name;
 	}
 	;
 
@@ -43,20 +80,24 @@ compound_list:
 	;
 
 compound:
-	compound_signature LBRACE compound_command_list RBRACE SEMICOLON {
-		my $generator = $T3->createGenerator();
+	COMPOUNDDEF compound_signature LBRACE compound_command_list RBRACE SEMICOLON {
+		my $signature = $T2;
+		my $commands = $T4;
+		my $generator = $commands->createGenerator();
 
 		my $result = "\n\n\n";
-		$result .= sprintf("%% %s\n", $T1->{"name"});
-		$result .= sprintf("setoutputfilename(\"%s.mps\");\n", $T1->{"id"});
+		$result .= sprintf("%% %s\n", $signature->{"name"});
+		$result .= sprintf("setoutputfilename(\"%s.mps\");\n", $signature->{"id"});
 		$result .= sprintf("beginfig(0);\n");
 		$result .= $generator->generateMetaPost();
 		$result .= sprintf("endfig;\n\n");
 		
+		$TT->debug("Created compound `%s'.", $signature->{"name"});
+		
 		my %figure = (
 			"code" => $result,
-			"id" => $T1->{"id"},
-			"name" => $T1->{"name"},
+			"id" => $signature->{"id"},
+			"name" => $signature->{"name"},
 		);
 		return \%figure;
 	};
@@ -103,6 +144,9 @@ compound_command_aux:
 		return $T1;
 	}
 	| compound_command_cyclic {
+		return $T1;
+	}
+	| compound_command_draw {
 		return $T1;
 	}
 	;
@@ -197,5 +241,88 @@ compound_command_cyclic:
 	}
 	;
 
+compound_command_draw:
+	DRAW LPAREN IDENTIFIER COMMA NUMBER COMMA node_number_list RPAREN {
+		my $macroName = $T3;
+		my $angle = $T5;
+		my @nodeNumbers = @{$T7};
+		
+		my $macro = $TT->_getMacro($macroName);
+		if ($macro == 0) {
+			$TT->raiseError(sprintf("Unknown draw macro `%s'.", $macroName));
+			return Builder->new();
+		}
+		
+		if (scalar(@nodeNumbers) != $macro->{"nodes"}) {
+			$TT->raiseError(sprintf("Invalid number of arguments for `%s'", $macroName));
+			return Builder->new();
+		}
+		
+		$TT->debug("Copying builder of `%s'.", $macroName);
+		my %mapping;
+		for (my $i = 1; $i <= $macro->{"nodes"}; $i++) {
+			$mapping{$i} = $nodeNumbers[$i - 1];
+		}
+		my $builder = $macro->{"builder"}->copyRemapped(\%mapping);
+		
+		
+		$TT->debug("Rotating `%s'.", $macroName);
+		$builder->rotate($angle);
+		
+		$TT->debug("Macro `%s' ready to be expanded.", $macroName);
+		
+		return $builder;
+	}
+	;
+
+node_number_list:
+	NUMBER {
+		my @list = ( $T1 );
+		return \@list;
+	}
+	| node_number_list COMMA NUMBER {
+		my @list = @{$T1};
+		push @list, $T3;
+		return \@list;
+	}
+	;
+
 %%
+
+## Initializes the Parser.
+# I do not know how to make it be called automatically from new() thus
+# the reason for having this method.
+# 
+sub init {
+	my ( $this ) = @_;
+	$this->{"macros"} = { };
+}
+
+sub _getMacro {
+	my ( $this, $macroName ) = @_;
+	
+	if (not exists($this->{"macros"}->{$macroName})) {
+		return 0;
+	}
+	
+	return $this->{"macros"}->{$macroName};
+}
+
+sub _addMacro {
+	my ( $this, $name, $nodeCount, $builder ) = @_;
+	$this->{"macros"}->{$name} = {
+		"nodes" => $nodeCount,
+		"builder" => $builder
+	};
+}
+
+sub debug {
+	my ( $this, $format, @params ) = @_;
+	printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
+}
+
+sub raiseError {
+	my ( $this, $description ) = @_;
+	printf STDERR "Parser->error: %s\n", $description;
+}
 

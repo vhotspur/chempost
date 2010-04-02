@@ -11,6 +11,42 @@ sub new {
 	return $this;
 }
 
+## Creates a deep copy.
+sub copy {
+	my ( $this ) = @_;
+	my $copy = Builder->new();
+
+	foreach my $id ( keys(%{$this->{"nodes"}}) ) {
+		$copy->_addNode($id, $this->{"nodes"}->{$id}->{"caption"});
+	}
+	
+	foreach my $bond ( @{$this->{"bonds"}}) {
+		$copy->addBond($bond->{"from"}, $bond->{"to"},
+			$bond->{"type"}, $bond->{"angle"});
+	}
+	
+	return $copy;
+}
+
+## Creates a deep copy with remapping.
+sub copyRemapped {
+	my ( $this, $nodeMapping ) = @_;
+	my $copy = Builder->new();
+
+	foreach my $id ( keys(%{$this->{"nodes"}}) ) {
+		$copy->_addNode($nodeMapping->{$id},
+			$this->{"nodes"}->{$id}->{"caption"});
+	}
+	
+	foreach my $bond ( @{$this->{"bonds"}}) {
+		my $from = $nodeMapping->{ $bond->{"from"} };
+		my $to = $nodeMapping->{ $bond->{"to"} };
+		$copy->addBond($from, $to, $bond->{"type"}, $bond->{"angle"});
+	}
+	
+	return $copy;
+}
+
 sub _formatCaption {
 	my ( $this, $caption ) = @_;
 
@@ -56,8 +92,14 @@ sub addNode {
 	my ( $this, $id, $caption ) = @_;
 
 	my @captionSplitted = $this->_formatCaption($caption);
+	$this->_addNode($id, \@captionSplitted);
+}
+
+sub _addNode {
+	my ( $this, $id, $captionSplitted ) = @_;
+	
 	$this->{"nodes"}->{$id} = {
-		"caption" => \@captionSplitted,
+		"caption" => $captionSplitted,
 	};
 }
 
@@ -83,6 +125,14 @@ sub merge {
 	};
 
 	push(@{$this->{"bonds"}}, @{$other->{"bonds"}});
+}
+
+sub rotate {
+	my ( $this, $angleShift ) = @_;
+	
+	for (my $b = 0; $b < @{$this->{"bonds"}}; $b++) {
+		$this->{"bonds"}->[$b]->{"angle"} += $angleShift;
+	}
 }
 
 sub createGenerator {

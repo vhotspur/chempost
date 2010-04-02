@@ -45,6 +45,7 @@ my $lexer = new Lexer();
 $lexer->from($input);
 
 my $parser = new Parser();
+$parser->init();
 my $figures = $parser->YYParse(
 	yylex => $lexer->getyylex(),
 	yyerror => \&yyerror,

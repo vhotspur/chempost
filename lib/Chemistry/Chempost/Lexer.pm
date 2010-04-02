@@ -7,8 +7,12 @@ use Parse::Lex;
 @ISA = qw(Parse::Lex);
 
 my @tokens = (
+	'MACRODEF', 'define',
+	'COMPOUNDDEF', 'compound',
+
 	'NODE', 'node',
 	'BOND', 'bond',
+	'DRAW', 'draw',
 	'CYCLIC', 'cyclic',
 	
 	'UNBOND', 'unbond',
@@ -29,7 +33,7 @@ my @tokens = (
 	},
 	'IDENTIFIER', '[a-zA-z]\w+',
 
-	'COMMENT', '[\/][\*](.|\n)*[\*][\/]',
+	'COMMENT', '[\/][\*](.|\n)*?[\*][\/]',
 
 	'ANYTHING', '.',
 );

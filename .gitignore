@@ -4,6 +4,8 @@ chempost-*.tar.gz
 # Generated MPS figures...
 *.mps
 sample.mp
+cycles.mp
+cresols.mp
 # ... and MetaPost auxilary files
 mptextmp.*
 *.log
