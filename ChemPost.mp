@@ -4,6 +4,34 @@ bondlen := 16pt;
 bondmargin := 2pt;
 bondmarginempty := 0.8pt;
 
+picture cachePicture[];
+string cacheText[];
+numeric cacheLen; cacheLen = 0;
+def texcacheimage(expr img_text) =
+	begingroup
+		% message "texcacheimage(" & img_text & ")";
+		save result; picture result;
+		save i; numeric i;
+		save found; boolean found; found := false;
+		for i = 0 upto cacheLen-1:
+			if img_text = cacheText[i]:
+				result := cachePicture[i];
+				found := true;
+			fi;
+		endfor;
+		if not found:
+			cachePicture[cacheLen] := TEX(img_text);
+			cacheText[cacheLen] := img_text;
+			result := cachePicture[cacheLen];
+			cacheLen := cacheLen + 1;
+		fi
+
+		% message "caching done";
+
+		result
+	endgroup
+enddef;
+
 %% Tells width of an image.
 % @param picture img Picture in question.
 % @return numeric Picture height.
@@ -88,10 +116,10 @@ def getbindpoint(expr param_angle, text_left, text_center, text_right) =
 		fi;
 
 		picture img_left, img_center, img_right, img_whole;
-		img_left := TEX("$" & text_left & "$");
-		img_center := TEX("$" & text_center & "$");
-		img_right := TEX("$" & text_right & "$");
-		img_whole := TEX("$" & text_left & text_center & text_right & "$");
+		img_left := texcacheimage("$" & text_left & "$");
+		img_center := texcacheimage("$" & text_center & "$");
+		img_right := texcacheimage("$" & text_right & "$");
+		img_whole := texcacheimage("$" & text_left & text_center & text_right & "$");
 
 
 		numeric width_left, width_center, width_right, width_whole;
@@ -104,9 +132,9 @@ def getbindpoint(expr param_angle, text_left, text_center, text_right) =
 		string height_adapt;
 		height_adapt := "{}_{3}";
 		if empty_node:
-			height_whole := imgheight(TEX("$\text{C}" & height_adapt & "$"));
+			height_whole := imgheight(texcacheimage("$\text{C}" & height_adapt & "$"));
 		else:
-			height_whole := imgheight(TEX("$" & text_left & text_center & text_right & height_adapt & "$"));
+			height_whole := imgheight(texcacheimage("$" & text_left & text_center & text_right & height_adapt & "$"));
 		fi;
 		numeric verticalcenter;
 		verticalcenter := height_whole/2;
@@ -224,7 +252,7 @@ enddef;
 def drawfirstnode(expr coordinates, nodetext) =
 	begingroup
 		picture the_text;
-		the_text := TEX("$" & nodetext & "$");
+		the_text := texcacheimage("$" & nodetext & "$");
 
 		numeric text_width, text_height;
 		text_width := imgwidth(the_text);
@@ -293,12 +321,12 @@ def drawnextnodefixeddistance(expr prev_coords, prev_left, prev_center, prev_rig
 
 		% make the bond shorter - as if the text would be drawn over it
 		picture img_left, img_center;
-		img_left := TEX("$" & curr_left & "$");
-		img_center := TEX("$" & curr_center & "$");
+		img_left := texcacheimage("$" & curr_left & "$");
+		img_center := texcacheimage("$" & curr_center & "$");
 		numeric width_left, width_center, height_all;
 		width_left := imgwidth(img_left);
 		width_center := imgwidth(img_center);
-		height_all := imgheight(TEX("$\text{C}_3$"));
+		height_all := imgheight(texcacheimage("$\text{C}_3$"));
 
 		pair center_coords;
 		center_coords := (width_left + width_center/2, height_all/2);
