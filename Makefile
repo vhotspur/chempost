@@ -1,8 +1,24 @@
 NAME = chempost
 VERSION = 0.01
 
-DISTNAME = $(NAME)-$(VERSION)
+###
+#
+# Below are variables you might want to change to correspond to
+# settings on your system.
+#
 
+# where to install - either site or vendor
+PERL_INSTALLDIRS = site
+# installation prefix - typically ~ or /usr or /usr/local
+PREFIX = /usr/local
+
+
+###
+#
+# The rest could be probably left alone.
+#
+#
+DISTNAME = $(NAME)-$(VERSION)
 
 ARCHIVE = $(DISTNAME).tar.gz
 
@@ -20,10 +36,24 @@ LIB_SOURCES_ALL = \
 	$(PARSER_MODULE) \
 	$(LIB_SOURCES)
 
+PERL_EXECUTABLE = perl
+
+BINDIR = $(PREFIX)/bin
+SHAREDIR = $(PREFIX)/share
+MY_SHAREDIR = $(SHAREDIR)/$(NAME)
+
+INSTALL = install
+INSTALL_DIR = $(INSTALL) -m 0755 -d
+INSTALL_NORMAL = $(INSTALL) -m 0644
+INSTALL_EXECUTABLE = $(INSTALL) -m 0755
+
+PERL_LIBINSTALLDIR = `$(PERL_EXECUTABLE) -MConfig -e 'printf $$Config{"install$(PERL_INSTALLDIRS)lib"};'`
+PERL_MODULESINSTALLDIR = $(PERL_LIBINSTALLDIR)/$(PACKAGE)
+
 MPOST = mpost --mem=mpost --tex=latex
 RM = rm -Rf
 YAPP = yapp
-PERL = perl -I$(LOCAL_LIB)
+PERL = $(PERL_EXECUTABLE) -I$(LOCAL_LIB)
 
 all: compile
 
@@ -61,6 +91,40 @@ $(PARSER_MODULE): Parser.y
 		| $(YAPP) -m Parser -o - /dev/stdin 2>/dev/null \
 		| sed 's#/dev/stdin#$<#g' >$@
 
+install: compile
+	@###
+	@# install PERL modules
+	@#
+	$(INSTALL_DIR) $(DESTDIR)$(PERL_LIBINSTALLDIR)
+	
+	$(INSTALL_DIR) $(DESTDIR)$(PERL_MODULESINSTALLDIR)
+	$(INSTALL_NORMAL) lib/$(PACKAGE)/*.pm $(DESTDIR)$(PERL_MODULESINSTALLDIR)/
+	
+	
+	@###
+	@# install helper script
+	@#
+	$(INSTALL_DIR) $(DESTDIR)$(MY_SHAREDIR)
+	sed \
+		-e 's#input ChemPost;#input $(MY_SHAREDIR)/ChemPost;#' \
+		< chempost.pl \
+		| $(INSTALL_EXECUTABLE) /dev/stdin $(DESTDIR)$(MY_SHAREDIR)/chempost.pl
+	
+	@###
+	@# install MetaPost library file
+	@#
+	$(INSTALL_NORMAL) ChemPost.mp $(DESTDIR)$(MY_SHAREDIR)/
+	
+	
+	@###
+	@# install the PATHed script itself
+	$(INSTALL_DIR) $(DESTDIR)$(BINDIR)
+	sed \
+		-e 's#CHEMPOST_PP=.*#CHEMPOST_PP=$(MY_SHAREDIR)/chempost.pl#' \
+		-e 's#PERL=.*#PERL="$(PERL_EXECUTABLE) -I'$(PERL_LIBINSTALLDIR)'"#' \
+		< chempost.sh \
+		| $(INSTALL_EXECUTABLE) /dev/stdin $(DESTDIR)$(BINDIR)/chempost
+
 clean:
 	$(RM) mptextmp.*
 	$(RM) sample.mp cycles.mp cresols.mp sample.log cycles.log cresols.log
@@ -73,6 +137,7 @@ distclean: clean
 dist:
 	mkdir $(DISTNAME)
 	cp Makefile ChemPost.mp Parser.y chempost.pl $(DISTNAME)
+	cp chempost.sh $(DISTNAME)
 	cp sample.chmp cycles.chmp cresols.chmp $(DISTNAME)
 	mkdir -p $(DISTNAME)/$(LOCAL_LIB)/$(PACKAGE)
 	cp $(LIB_SOURCES) $(DISTNAME)/$(LOCAL_LIB)/$(PACKAGE)/

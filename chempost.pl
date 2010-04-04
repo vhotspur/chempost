@@ -97,16 +97,22 @@ EOF_FOOTER
 
 my $output = $scriptHeader;
 
+my $figuresGenerated = 0;
 foreach my $f ( @{$figures} ) {
 	if ($options{"generate-all"} or exists($options{"generate-only"}->{$f->{"id"}})) {
 		$output .= $f->{"code"};
+		$figuresGenerated++;
 	}
 }
 
 $output .= $scriptFooter;
 
-print $output;
+if ($figuresGenerated == 0) {
+	printf STDERR "No figures generated!\n";
+	exit 1;
+}
 
+print $output;
 
 exit 0;
 
