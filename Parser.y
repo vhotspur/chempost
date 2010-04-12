@@ -3,6 +3,7 @@ package Parser;
 use Data::Dumper;
 use Chemistry::Chempost::Builder;
 use Chemistry::Chempost::Generator;
+use Chemistry::Chempost::Lexer;
 
 %}
 
@@ -23,10 +24,9 @@ chempost:
 		return $T2;
 	}
 	| error {
-		 print STDERR Dumper $TT->YYCurtok;
-		 print STDERR Dumper $TT->YYCurval;
-		 print STDERR Dumper $TT->YYExpect;
-		 die "Parse error.";
+		$TT->_recovered();
+		my @result = ();
+		return \@result;
 	}
 	;
 
@@ -70,11 +70,17 @@ macro_definition:
 compound_list:
 	compound {
 		my @result = ( $T1 );
+		if ($T1 == 0) {
+			@result = ();
+		}
 		return \@result;
 	}
 	|
 	compound_list compound {
 		my @result = ( @{$T1}, $T2 );
+		if ($T2 == 0) {
+			@result = ( @{$T1} );
+		}
 		return \@result;
 	}
 	;
@@ -100,7 +106,17 @@ compound:
 			"name" => $signature->{"name"},
 		);
 		return \%figure;
-	};
+	}
+	| COMPOUNDDEF compound_signature error {
+		my $signature = $T2;
+		
+		$TT->parseError("Invalid compound `%s' definition.", $signature->{"name"});
+		
+		$TT->_recovered();
+		
+		return 0;
+	}
+	;
 
 compound_signature:
 	IDENTIFIER {
@@ -127,6 +143,10 @@ compound_command_list:
 compound_command:
 	compound_command_aux SEMICOLON {
 		return $T1;
+	}
+	| error SEMICOLON {
+		$TT->_recovered();
+		return Builder->new();
 	}
 	;
 
@@ -186,7 +206,7 @@ compound_command_cyclic:
 		
 		# verify that it is of form 1-2=3-4-
 		unless ($description =~ /^([1-9][0-9]*[-=#:])+$/) {
-			printf STDERR "Cyclic description invalid.\n";
+			$TT->raiseError("Cyclic description `%s' invalid.", $description);
 			return Builder->new();
 		}
 		
@@ -249,12 +269,12 @@ compound_command_draw:
 		
 		my $macro = $TT->_getMacro($macroName);
 		if ($macro == 0) {
-			$TT->raiseError(sprintf("Unknown draw macro `%s'.", $macroName));
+			$TT->raiseError("Unknown draw macro `%s'.", $macroName);
 			return Builder->new();
 		}
 		
 		if (scalar(@nodeNumbers) != $macro->{"nodes"}) {
-			$TT->raiseError(sprintf("Invalid number of arguments for `%s'", $macroName));
+			$TT->raiseError("Invalid number of arguments for `%s'", $macroName);
 			return Builder->new();
 		}
 		
@@ -298,6 +318,17 @@ sub init {
 	$this->{"macros"} = { };
 }
 
+sub parseString {
+	my ( $this, $input ) = @_;
+	my $lexer = new Lexer();
+	$lexer->from($input);
+	my $result = $this->YYParse(
+		yylex => $lexer->getyylex(),
+		yyerror => $this->getyyerror(),
+		yydebug => 0);
+	return $result;
+}
+
 sub _getMacro {
 	my ( $this, $macroName ) = @_;
 	
@@ -316,13 +347,30 @@ sub _addMacro {
 	};
 }
 
+sub getyyerror {
+	my $this = shift;
+	return sub {
+		$this->_parseError($this);
+	}
+}
+
+sub _parseError {
+	my ( $this ) = @_;
+	$this->raiseError("Parsing failed: `%s' expected.", $this->YYExpect);
+}
+
+sub _recovered {
+	my ( $this ) = @_;
+	$this->YYErrok();
+}
+
 sub debug {
 	my ( $this, $format, @params ) = @_;
 	printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
 }
 
 sub raiseError {
-	my ( $this, $description ) = @_;
-	printf STDERR "Parser->error: %s\n", $description;
+	my ( $this, $format, @params ) = @_;
+	printf STDERR "Error: %s\n", sprintf $format, @params;
 }
 

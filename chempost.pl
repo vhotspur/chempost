@@ -3,7 +3,6 @@
 
 use Data::Dumper;
 use Chemistry::Chempost::Parser;
-use Chemistry::Chempost::Lexer;
 use Getopt::Std;
 
 
@@ -36,20 +35,10 @@ if (@ARGV > 0) {
 	@inputLines = <STDIN>;
 }
 
-sub yyerror {
-	printf STDERR "yyerror()\n";
-}
-
 my $input = join("", @inputLines);
-my $lexer = new Lexer();
-$lexer->from($input);
-
 my $parser = new Parser();
 $parser->init();
-my $figures = $parser->YYParse(
-	yylex => $lexer->getyylex(),
-	yyerror => \&yyerror,
-	yydebug => 0);
+my $figures = $parser->parseString($input);
 
 my $scriptHeader = <<EOF_HEADER;
 input TEX;
