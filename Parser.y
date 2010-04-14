@@ -59,11 +59,21 @@ macro_definition:
 		my $name = $T2->{"value"};
 		my $nodeCount = $T4->{"value"};
 		my $builder = $T7;
+		my $refLine = $T1->{"line"};
+		
+		if ($TT->_isGroupIgnored()) {
+			$TT->warn($refLine,
+				"Ignoring macro `%s' due to previous errors.",
+				$name);
+			$TT->_groupEnd();
+			return 0;
+		}
 		
 		$TT->_addMacro($name, $nodeCount, $builder);
 		$TT->debug("Defined macro `%s'.", $name);
-		# returning name although it is not used anywhere
-		return $name;
+		
+		$TT->_groupEnd();
+		return 0;
 	}
 	;
 
@@ -90,10 +100,13 @@ compound:
 		my $signature = $T2;
 		my $commands = $T4;
 		my $generator = $commands->createGenerator();
+		my $refLine = $T1->{"line"};
 
-		if ($TT->_getData("compound-invalid", 0)) {
-			$TT->raiseError("Ignoring compound `%s'.", $signature->{"name"});
-			$TT->_setData("compound-invalid", 0);
+		if ($TT->_isGroupIgnored()) {
+			$TT->warn($refLine,
+				"Ignoring compound `%s' due to previous errors.",
+				$signature->{"name"});
+			$TT->_groupEnd();
 			return 0;
 		}
 		
@@ -111,12 +124,15 @@ compound:
 			"id" => $signature->{"id"},
 			"name" => $signature->{"name"},
 		);
+		
+		$TT->_groupEnd();
 		return \%figure;
 	}
 	| COMPOUNDDEF compound_signature error RBRACE SEMICOLON {
 		my $signature = $T2;
+		my $refLine = $T1->{"line"};
 		
-		$TT->raiseError("Invalid compound `%s' definition.", $signature->{"name"});
+		$TT->error($refLine, "Invalid compound `%s' definition.", $signature->{"name"});
 		
 		$TT->_recovered();
 		
@@ -151,8 +167,7 @@ compound_command:
 		return $T1;
 	}
 	| error SEMICOLON {
-		$TT->debug("bad command encountered");
-		$TT->_setData("compound-invalid", 1);
+		$TT->_ignoreGroup();
 		$TT->_recovered();
 		return Builder->new();
 	}
@@ -210,11 +225,13 @@ compound_command_unbond:
 compound_command_cyclic:
 	CYCLIC LPAREN STRING COMMA NUMBER RPAREN {
 		my $description = $T3->{"value"};
+		my $refLine = $T3->{"line"};
 		my $angle = $T5->{"value"};
 		
 		# verify that it is of form 1-2=3-4-
 		unless ($description =~ /^([1-9][0-9]*[-=#:])+$/) {
-			$TT->raiseError("Cyclic description `%s' invalid.", $description);
+			$TT->_ignoreGroup();
+			$TT->error($refLine, "Cyclic description `%s' invalid.", $description);
 			return Builder->new();
 		}
 		
@@ -274,15 +291,18 @@ compound_command_draw:
 		my $macroName = $T3->{"value"};
 		my $angle = $T5->{"value"};
 		my @nodeNumbers = @{$T7};
+		my $refLine = $T1->{"line"};
 		
 		my $macro = $TT->_getMacro($macroName);
 		if ($macro == 0) {
-			$TT->raiseError("Unknown draw macro `%s'.", $macroName);
+			$TT->error($refLine, "Unknown draw macro `%s'.", $macroName);
+			$TT->_ignoreGroup();
 			return Builder->new();
 		}
 		
 		if (scalar(@nodeNumbers) != $macro->{"nodes"}) {
-			$TT->raiseError("Invalid number of arguments for `%s'", $macroName);
+			$TT->error($refLine, "Invalid number of arguments for `%s'", $macroName);
+			$TT->_ignoreGroup();
 			return Builder->new();
 		}
 		
@@ -327,9 +347,10 @@ sub init {
 }
 
 sub parseString {
-	my ( $this, $input ) = @_;
+	my ( $this, $filename, $input ) = @_;
 	$this->{"lexer"} = new Lexer();
 	$this->{"lexer"}->from($input);
+	$this->{"current-filename"} = $filename;
 	my $result = $this->YYParse(
 		yylex => $this->{"lexer"}->getyylex(),
 		yyerror => $this->getyyerror(),
@@ -369,6 +390,21 @@ sub _getData {
 	}
 }
 
+sub _ignoreGroup {
+	my ( $this ) = @_;
+	$this->_setData("group-ignore", 1);
+}
+
+sub _isGroupIgnored {
+	my ( $this ) = @_;
+	return $this->_getData("group-ignore", 0);
+}
+
+sub _groupEnd {
+	my ( $this ) = @_;
+	$this->_setData("group-ignore", 0);
+}
+
 sub getyyerror {
 	my $this = shift;
 	return sub {
@@ -379,15 +415,15 @@ sub getyyerror {
 sub _parseError {
 	my ( $this ) = @_;
 	my @expected = $this->YYExpect();
+	my $expected = $expected[0];
 	my $curval = $this->YYCurval;
 	if (defined $curval) {
 		my $found = $this->YYCurval->{"value"};
 		my $line = $this->YYCurval->{"line"};
-		$this->raiseError("Parsing failed: `%s' expected at line %d (got `%s').",
-			$expected[0], $line, $found);
+		$this->error($line, "Expected `%s', found `%s' instead.", $expected, $found);
 	} else {
-		$this->raiseError("Parsing failed: `%s' expected but end of file found.",
-			$expected[0]);
+		my $line = $this->{"lexer"}->getlinenumber();
+		$this->error($line, "Expected `%s' instead of end of file.", $expected);
 	}
 		
 }
@@ -400,6 +436,28 @@ sub _recovered {
 sub debug {
 	my ( $this, $format, @params ) = @_;
 	#printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
+}
+
+sub _msg {
+	my ( $this, $line, $kind, $format, @params ) = @_;
+	my $errorText = sprintf $format, @params;
+	my $location;
+	if ($line > 0) {
+		$location = sprintf("%s:%d", $this->{"current-filename"}, $line);
+	} else {
+		$location = $this->{"current-filename"};
+	}
+	printf STDERR "%s: %s: %s\n", $location, $kind, $errorText;
+}
+
+sub error {
+	my ( $this, $line, $format, @params ) = @_;
+	$this->_msg($line, "error", $format, @params);
+}
+
+sub warn {
+	my ( $this, $line, $format, @params ) = @_;
+	$this->_msg($line, "warning", $format, @params);
 }
 
 sub raiseError {

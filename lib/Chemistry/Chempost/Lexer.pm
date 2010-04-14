@@ -53,6 +53,11 @@ sub new {
 	return $this;
 }
 
+sub getlinenumber {
+	my $this = shift;
+	return $this->{"line-number"};
+}
+
 sub from {
 	my $this = shift;
 	$this->{"lexer"}->from(@_);

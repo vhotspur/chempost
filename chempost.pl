@@ -23,6 +23,7 @@ if (exists $runOptions{"g"}) {
 }
 
 my @inputLines;
+my $inputFilename;
 if (@ARGV > 0) {
 	if (@ARGV != 1) {
 		die "Too many input files.";
@@ -31,14 +32,16 @@ if (@ARGV > 0) {
 		or die "Cannot open input file.";
 	@inputLines = <INPUT>;
 	close(INPUT);
+	$inputFilename = $ARGV[0];
 } else {
 	@inputLines = <STDIN>;
+	$inputFilename = "<stdin>";
 }
 
 my $input = join("", @inputLines);
 my $parser = new Parser();
 $parser->init();
-my $figures = $parser->parseString($input);
+my $figures = $parser->parseString($inputFilename, $input);
 
 my $scriptHeader = <<EOF_HEADER;
 input TEX;
@@ -97,7 +100,7 @@ foreach my $f ( @{$figures} ) {
 $output .= $scriptFooter;
 
 if ($figuresGenerated == 0) {
-	printf STDERR "No figures generated!\n";
+	printf STDERR "Error: no figures generated!\n";
 	exit 1;
 }
 
