@@ -4,7 +4,6 @@ require 5.005;
 
 use Parse::Lex;
 
-@ISA = qw(Parse::Lex);
 
 my @tokens = (
 	'MACRODEF', 'define',
@@ -34,6 +33,8 @@ my @tokens = (
 	'IDENTIFIER', '[a-zA-z]\w+',
 
 	'COMMENT', '[\/][\*](.|\n)*?[\*][\/]',
+	'NEWLINE', '[\n]',
+	'BLANK', '[ \t]+',
 
 	'ANYTHING', '.',
 );
@@ -42,27 +43,49 @@ my @tokens = (
 sub new {
 	my ( $self ) = @_;
 	
-	my $this = $self->SUPER::new(@tokens);
+	my $this = { };
+	$this->{"lexer"} = Parse::Lex->new(@tokens);
 	bless $this;
 	
-	$this->skip('\s+');
+	$this->{"line-number"} = 1;
+	$this->{"lexer"}->skip('');
 	
 	return $this;
+}
+
+sub from {
+	my $this = shift;
+	$this->{"lexer"}->from(@_);
 }
 
 sub getyylex {
   my $self = shift;
   return sub {
 	my ( $value, $name, $token );
+	my $skip;
 	do {
-		$token = $self->next;
-		if ($self->eoi) {
+		$token = $self->{"lexer"}->next;
+		if ($self->{"lexer"}->eoi) {
 			return ("", undef);
 		}
 		$name = $token->name;
-	} while ($name eq 'COMMENT');
+		$skip = 0;
+		if ($name eq 'NEWLINE') {
+			$self->{'line-number'}++;
+		}
+		if (($name eq 'COMMENT')
+			or ($name eq 'BLANK')
+			or ($name eq 'NEWLINE')	
+			) {
+			$skip = 1;
+		}
+	} while ($skip);
 	$value = $token->text;
-	return ($name, $value);
+	my %value = (
+		"value" => $value,
+		"line" => $self->{'line-number'}
+	);
+	return ($name, \%value);
   }
 }
 

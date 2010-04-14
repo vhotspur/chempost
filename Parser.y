@@ -56,8 +56,8 @@ macro_definition_list:
 macro_definition:
 	MACRODEF IDENTIFIER LPAREN NUMBER RPAREN
 			LBRACE compound_command_list RBRACE SEMICOLON {
-		my $name = $T2;
-		my $nodeCount = $T4;
+		my $name = $T2->{"value"};
+		my $nodeCount = $T4->{"value"};
 		my $builder = $T7;
 		
 		$TT->_addMacro($name, $nodeCount, $builder);
@@ -91,6 +91,12 @@ compound:
 		my $commands = $T4;
 		my $generator = $commands->createGenerator();
 
+		if ($TT->_getData("compound-invalid", 0)) {
+			$TT->raiseError("Ignoring compound `%s'.", $signature->{"name"});
+			$TT->_setData("compound-invalid", 0);
+			return 0;
+		}
+		
 		my $result = "\n\n\n";
 		$result .= sprintf("%% %s\n", $signature->{"name"});
 		$result .= sprintf("setoutputfilename(\"%s.mps\");\n", $signature->{"id"});
@@ -107,10 +113,10 @@ compound:
 		);
 		return \%figure;
 	}
-	| COMPOUNDDEF compound_signature error {
+	| COMPOUNDDEF compound_signature error RBRACE SEMICOLON {
 		my $signature = $T2;
 		
-		$TT->parseError("Invalid compound `%s' definition.", $signature->{"name"});
+		$TT->raiseError("Invalid compound `%s' definition.", $signature->{"name"});
 		
 		$TT->_recovered();
 		
@@ -120,11 +126,11 @@ compound:
 
 compound_signature:
 	IDENTIFIER {
-		my %signature = ("id" => $T1, "name" => $T1);
+		my %signature = ("id" => $T1->{"value"}, "name" => $T1->{"value"});
 		return \%signature;
 	}
 	| IDENTIFIER STRING {
-		my %signature = ("id" => $T1, "name" => $T2);
+		my %signature = ("id" => $T1->{"value"}, "name" => $T2->{"value"});
 		return \%signature;
 	}
 	;
@@ -145,6 +151,8 @@ compound_command:
 		return $T1;
 	}
 	| error SEMICOLON {
+		$TT->debug("bad command encountered");
+		$TT->_setData("compound-invalid", 1);
 		$TT->_recovered();
 		return Builder->new();
 	}
@@ -179,7 +187,7 @@ compound_command_empty: {
 compound_command_node:
 	NODE LPAREN NUMBER COMMA STRING RPAREN {
 		my $builder = Builder->new();
-		$builder->addNode($T3, $T5);
+		$builder->addNode($T3->{"value"}, $T5->{"value"});
 		return $builder;
 	}
 	;
@@ -187,7 +195,7 @@ compound_command_node:
 compound_command_bond:
 	BOND LPAREN NUMBER COMMA NUMBER COMMA BOND_KIND COMMA NUMBER RPAREN {
 		my $builder = Builder->new();
-		$builder->addBond($T3, $T5, $T7, $T9);
+		$builder->addBond($T3->{"value"}, $T5->{"value"}, $T7->{"value"}, $T9->{"value"});
 		return $builder;
 	}
 	;
@@ -201,8 +209,8 @@ compound_command_unbond:
 
 compound_command_cyclic:
 	CYCLIC LPAREN STRING COMMA NUMBER RPAREN {
-		my $description = $T3;
-		my $angle = $T5;
+		my $description = $T3->{"value"};
+		my $angle = $T5->{"value"};
 		
 		# verify that it is of form 1-2=3-4-
 		unless ($description =~ /^([1-9][0-9]*[-=#:])+$/) {
@@ -263,8 +271,8 @@ compound_command_cyclic:
 
 compound_command_draw:
 	DRAW LPAREN IDENTIFIER COMMA NUMBER COMMA node_number_list RPAREN {
-		my $macroName = $T3;
-		my $angle = $T5;
+		my $macroName = $T3->{"value"};
+		my $angle = $T5->{"value"};
 		my @nodeNumbers = @{$T7};
 		
 		my $macro = $TT->_getMacro($macroName);
@@ -297,12 +305,12 @@ compound_command_draw:
 
 node_number_list:
 	NUMBER {
-		my @list = ( $T1 );
+		my @list = ( $T1->{"value"} );
 		return \@list;
 	}
 	| node_number_list COMMA NUMBER {
 		my @list = @{$T1};
-		push @list, $T3;
+		push @list, $T3->{"value"};
 		return \@list;
 	}
 	;
@@ -320,10 +328,10 @@ sub init {
 
 sub parseString {
 	my ( $this, $input ) = @_;
-	my $lexer = new Lexer();
-	$lexer->from($input);
+	$this->{"lexer"} = new Lexer();
+	$this->{"lexer"}->from($input);
 	my $result = $this->YYParse(
-		yylex => $lexer->getyylex(),
+		yylex => $this->{"lexer"}->getyylex(),
 		yyerror => $this->getyyerror(),
 		yydebug => 0);
 	return $result;
@@ -347,6 +355,20 @@ sub _addMacro {
 	};
 }
 
+sub _setData {
+	my ( $this, $key, $value ) = @_;
+	$this->YYData->{$key} = $value;
+}
+
+sub _getData {
+	my ( $this, $key, $default ) = ( @_, 0 );
+	if (exists $this->YYData->{$key}) {
+		return $this->YYData->{$key};
+	} else {
+		return $default;
+	}
+}
+
 sub getyyerror {
 	my $this = shift;
 	return sub {
@@ -356,7 +378,18 @@ sub getyyerror {
 
 sub _parseError {
 	my ( $this ) = @_;
-	$this->raiseError("Parsing failed: `%s' expected.", $this->YYExpect);
+	my @expected = $this->YYExpect();
+	my $curval = $this->YYCurval;
+	if (defined $curval) {
+		my $found = $this->YYCurval->{"value"};
+		my $line = $this->YYCurval->{"line"};
+		$this->raiseError("Parsing failed: `%s' expected at line %d (got `%s').",
+			$expected[0], $line, $found);
+	} else {
+		$this->raiseError("Parsing failed: `%s' expected but end of file found.",
+			$expected[0]);
+	}
+		
 }
 
 sub _recovered {
@@ -366,7 +399,7 @@ sub _recovered {
 
 sub debug {
 	my ( $this, $format, @params ) = @_;
-	printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
+	#printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
 }
 
 sub raiseError {
