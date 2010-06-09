@@ -8,6 +8,7 @@ use Parse::Lex;
 my @tokens = (
 	'MACRODEF', 'define',
 	'COMPOUNDDEF', 'compound',
+	'INCLUDE', 'include',
 
 	'NODE', 'node',
 	'BOND', 'bond',

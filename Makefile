@@ -59,7 +59,8 @@ all: compile
 
 .PHONY: all \
 	compile \
-	sample cycles \
+	examples \
+	sample cycles cresols icresols \
 	dist \
 	clean distclean
 
@@ -68,6 +69,8 @@ compile: $(PARSER_MODULE)
 run: compile
 	$(PERL) ./chempost.pl <sample.chmp
 
+examples: sample cycles cresols icresols
+
 sample: sample.mp
 	$(MPOST) $<
 
@@ -75,6 +78,9 @@ cycles: cycles.mp
 	$(MPOST) $<
 
 cresols: cresols.mp
+	$(MPOST) $<
+
+icresols: icresols.mp
 	$(MPOST) $<
 
 %.mp: chempost.pl $(LIB_SOURCES_ALL) %.chmp

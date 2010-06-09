@@ -20,8 +20,8 @@ use Chemistry::Chempost::Lexer;
 %%
 
 chempost:
-	macro_definitions compound_list {
-		return $T2;
+	includes macro_definitions compound_list {
+		return $T3;
 	}
 	| error {
 		$TT->_recovered();
@@ -29,6 +29,57 @@ chempost:
 		return \@result;
 	}
 	;
+
+includes:
+	include_list {
+	}
+	| {
+	}
+	;
+
+include_list:
+	include {
+		return 0;
+	}
+	| include_list include {
+		return 0;
+	}
+	;
+
+include:
+	INCLUDE STRING SEMICOLON {
+		my $filename = $T2->{"value"};
+		my $refLine = $T1->{"line"};
+		my $fd;
+		
+		if (not open($fd, $filename)) {
+			$TT->error($refLine, "Failed to include `%s'.", $filename);
+			return 0;
+		}
+		
+		$TT->debug("Including `%s'.", $filename);
+		
+		# read all the lines
+		my @inputLines = <$fd>;
+		close($fd);
+		
+		my $includedFileText = join("", @inputLines);
+		
+		# parse the text as is
+		my $parser = new Parser();
+		$parser->init();
+		$parser->parseString($filename, $includedFileText);
+		
+		# but discard generated compounds and copy macros only
+		foreach my $m (keys %{$parser->{"macros"}}) {
+			my $macro = $parser->{"macros"}->{$m};
+			$TT->_addMacro($m, $macro->{"nodes"}, $macro->{"builder"});
+		}
+		
+		$TT->debug("End of `%s'.", $filename);
+		
+		return 0;
+	};
 
 macro_definitions:
 	macro_definition_list {

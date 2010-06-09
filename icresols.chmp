@@ -1,0 +1,20 @@
+include "cresols.chmp";
+
+compound i_ocresol "o-cresol" {
+	/* weird numbers only because of testing :-) */
+	draw(phenol, 0, 1,9,4,5,3,6,7);
+	node(8, "CH3");
+	bond(9, 8, single, 30);
+};
+
+compound i_mcresol "m-cresol" {
+	draw(phenol, 0, 1,2,3,4,5,6,7);
+	node(8, "CH3");
+	bond(1, 8, single, 330);
+};
+
+compound i_pcresol "p-cresol" {
+	draw(phenol, 0, 1,2,3,4,5,6,7);
+	node(8, "CH3");
+	bond(6, 8, single, 270);
+};

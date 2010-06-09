@@ -6,6 +6,7 @@ chempost-*.tar.gz
 sample.mp
 cycles.mp
 cresols.mp
+icresols.mp
 # ... and MetaPost auxilary files
 mptextmp.*
 *.log
