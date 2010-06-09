@@ -391,7 +391,7 @@ node_number_list:
 ## Initializes the Parser.
 # I do not know how to make it be called automatically from new() thus
 # the reason for having this method.
-# 
+#
 sub init {
 	my ( $this ) = @_;
 	$this->{"macros"} = { };

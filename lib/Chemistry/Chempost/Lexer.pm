@@ -65,34 +65,34 @@ sub from {
 }
 
 sub getyylex {
-  my $self = shift;
-  return sub {
-	my ( $value, $name, $token );
-	my $skip;
-	do {
-		$token = $self->{"lexer"}->next;
-		if ($self->{"lexer"}->eoi) {
-			return ("", undef);
-		}
-		$name = $token->name;
-		$skip = 0;
-		if ($name eq 'NEWLINE') {
-			$self->{'line-number'}++;
-		}
-		if (($name eq 'COMMENT')
-			or ($name eq 'BLANK')
-			or ($name eq 'NEWLINE')	
-			) {
-			$skip = 1;
-		}
-	} while ($skip);
-	$value = $token->text;
-	my %value = (
-		"value" => $value,
-		"line" => $self->{'line-number'}
-	);
-	return ($name, \%value);
-  }
+	my $self = shift;
+	return sub {
+		my ( $value, $name, $token );
+		my $skip;
+		do {
+			$token = $self->{"lexer"}->next;
+			if ($self->{"lexer"}->eoi) {
+				return ("", undef);
+			}
+			$name = $token->name;
+			$skip = 0;
+			if ($name eq 'NEWLINE') {
+				$self->{'line-number'}++;
+			}
+			if (($name eq 'COMMENT')
+				or ($name eq 'BLANK')
+				or ($name eq 'NEWLINE')
+				) {
+				$skip = 1;
+			}
+		} while ($skip);
+		$value = $token->text;
+		my %value = (
+			"value" => $value,
+			"line" => $self->{'line-number'}
+		);
+		return ($name, \%value);
+	}
 }
 
 
