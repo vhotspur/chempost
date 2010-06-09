@@ -49,8 +49,11 @@ INSTALL_EXECUTABLE = $(INSTALL) -m 0755
 
 PERL_LIBINSTALLDIR = `$(PERL_EXECUTABLE) -MConfig -e 'printf $$Config{"install$(PERL_INSTALLDIRS)lib"};'`
 PERL_MODULESINSTALLDIR = $(PERL_LIBINSTALLDIR)/$(PACKAGE)
+PERL_CHECKMODULE = $(PERL_EXECUTABLE) -e 1 -M
 
-MPOST = mpost --mem=mpost --tex=latex
+MPOST_EXECUTABLE = mpost
+MPOST_OPTS = --mem=mpost --tex=latex
+MPOST = $(MPOST_EXECUTABLE) $(MPOST_OPTS)
 RM = rm -Rf
 YAPP = yapp
 PERL = $(PERL_EXECUTABLE) -I$(LOCAL_LIB)
@@ -62,6 +65,7 @@ all: compile
 	examples \
 	sample cycles cresols icresols \
 	dist \
+	check-tools \
 	clean distclean
 
 compile: $(PARSER_MODULE)
@@ -96,6 +100,16 @@ $(PARSER_MODULE): Parser.y
 	sed 's/\$$T\([1-9]\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
 		| $(YAPP) -m Parser -o - /dev/stdin 2>/dev/null \
 		| sed 's#/dev/stdin#$<#g' >$@
+
+check-tools:
+	@echo "Checking that all tools are available..."
+	@echo -n ' * MetaPost interpreter: '; which $(MPOST_EXECUTABLE)
+	@echo -n ' * PERL: '; which $(PERL_EXECUTABLE)
+	@echo -n '    * Data::Dumper '; $(PERL_CHECKMODULE)Data::Dumper && echo "found."
+	@echo -n '    * Parse::Lex '; $(PERL_CHECKMODULE)Parse::Lex && echo "found."
+	@echo -n '    * Getopt::Std '; $(PERL_CHECKMODULE)Getopt::Std && echo "found."
+	@echo -n ' * YAPP: '; which $(YAPP)
+	@echo "Looks good."
 
 install: compile
 	@###

@@ -12,6 +12,11 @@ Compiling
 Before running MetaPost, the gramatical parser needs to be created.
 Running `make' will do the trick.
 
+Running `make check-tools' beforehand will do a very simple check that
+all tools needed for compilation and running are available. If you do not
+use standard installation locations of your programs, you might need to
+change some of the Makefile variables (mostly, suffixed _EXECUTABLE).
+
 
 
 Running
