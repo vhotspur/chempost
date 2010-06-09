@@ -1,4 +1,6 @@
 %{
+## @class Parser
+# Grammar parser for ChemPost.
 package Parser;
 use Data::Dumper;
 use Chemistry::Chempost::Builder;
@@ -388,7 +390,8 @@ node_number_list:
 
 %%
 
-## Initializes the Parser.
+## @method public void init()
+# Initializes the parser.
 # I do not know how to make it be called automatically from new() thus
 # the reason for having this method.
 #
@@ -397,6 +400,12 @@ sub init {
 	$this->{"macros"} = { };
 }
 
+## @method public FigureList parseString(string $filename, string $text)
+# Parses given string into list of figures.
+# @param $filename Filename to be used in error messages.
+# @param $text Actual content of the file (string to be parsed).
+# @return List of figures generated from given string.
+#
 sub parseString {
 	my ( $this, $filename, $input ) = @_;
 	$this->{"lexer"} = new Lexer();
@@ -409,6 +418,12 @@ sub parseString {
 	return $result;
 }
 
+## @method private struct _getMacro(string $macroName)
+# Tells macro definition.
+# @param $macroName Macro name.
+# @return Macro definition.
+# @retval 0 Macro not found (i.e. bad name).
+#
 sub _getMacro {
 	my ( $this, $macroName ) = @_;
 	
@@ -419,6 +434,12 @@ sub _getMacro {
 	return $this->{"macros"}->{$macroName};
 }
 
+## @method private void _addMacro(string $name, int $nodeCount, Builder $builder)
+# Adds a macro.
+# @param $name Macro name.
+# @param $nodeCount Number of nodes in the subcompound drawn by the macro.
+# @param $builder Configured builder of the subcompound (subfigure).
+#
 sub _addMacro {
 	my ( $this, $name, $nodeCount, $builder ) = @_;
 	$this->{"macros"}->{$name} = {
@@ -427,11 +448,22 @@ sub _addMacro {
 	};
 }
 
+## @method private void _setData(string $key, any $value)
+# Sets parser specific data.
+# @param $key Look-up key.
+# @param $value Value to be stored.
+#
 sub _setData {
 	my ( $this, $key, $value ) = @_;
 	$this->YYData->{$key} = $value;
 }
 
+## @method private any _getData(string $key, any $default = 0)
+# Accesses parser specific data.
+# @param $key Look-up key.
+# @param $default Default value when no data are stored under the @p $key.
+# @return Data stored under the @p $key.
+#
 sub _getData {
 	my ( $this, $key, $default ) = ( @_, 0 );
 	if (exists $this->YYData->{$key}) {
@@ -441,21 +473,37 @@ sub _getData {
 	}
 }
 
+## @method private void _ignoreGroup()
+# Marks current group as ignored.
+# Practically, such group is normally parsed but does not appear in the
+# final list of generated figures.
+#
 sub _ignoreGroup {
 	my ( $this ) = @_;
 	$this->_setData("group-ignore", 1);
 }
 
+## @method private bool _isGroupIgnored()
+# Tells whether current group is ignored.
+# @see _ignoreGroup
+#
 sub _isGroupIgnored {
 	my ( $this ) = @_;
 	return $this->_getData("group-ignore", 0);
 }
 
+## @method private void _groupEnd()
+# Callback after reaching end of a group.
+# This method resets some group-specific settings (such as ignore flag).
+#
 sub _groupEnd {
 	my ( $this ) = @_;
 	$this->_setData("group-ignore", 0);
 }
 
+## @method public function getyyerror()
+# Creates callback for handling parser errors.
+#
 sub getyyerror {
 	my $this = shift;
 	return sub {
@@ -463,6 +511,9 @@ sub getyyerror {
 	}
 }
 
+## @method private void _parseError
+# Parse error handler.
+#
 sub _parseError {
 	my ( $this ) = @_;
 	my @expected = $this->YYExpect();
@@ -479,16 +530,35 @@ sub _parseError {
 		
 }
 
+## @method private void _recovered()
+# Wrapper for standard @c YYErrok.
+# Currently does nothing.
+#
 sub _recovered {
 	my ( $this ) = @_;
 	$this->YYErrok();
 }
 
+## @method protected void debug(string $format, ...)
+# Prints debugging information.
+# Currently does nothing.
+#
 sub debug {
 	my ( $this, $format, @params ) = @_;
 	#printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
 }
 
+## @method private void _msg(int $line, enum $kind, string $format, ...)
+# Prints a message to stderr.
+# This method behaves as a printf function (the @p $format parameter).
+#
+# To supress line number printing, set the line number to a negative (or
+# zero) number.
+#
+# @param $line Line number bounded with the message,
+# @param $kind Message kind.
+# @param $format Formatting string.
+#
 sub _msg {
 	my ( $this, $line, $kind, $format, @params ) = @_;
 	my $errorText = sprintf $format, @params;
@@ -501,11 +571,23 @@ sub _msg {
 	printf STDERR "%s: %s: %s\n", $location, $kind, $errorText;
 }
 
+## @method protected void error(int $line, string $format, ...)
+# Prints error message.
+# @see _msg
+# @param $line Error position in the source file (line number).
+# @param $format Formatting string.
+#
 sub error {
 	my ( $this, $line, $format, @params ) = @_;
 	$this->_msg($line, "error", $format, @params);
 }
 
+## @method protected void warn(int $line, string $format, ...)
+# Prints warning message.
+# @see _msg
+# @param $line Position in the source file (line number).
+# @param $format Formatting string.
+#
 sub warn {
 	my ( $this, $line, $format, @params ) = @_;
 	$this->_msg($line, "warning", $format, @params);
