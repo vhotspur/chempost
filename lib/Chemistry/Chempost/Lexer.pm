@@ -1,3 +1,6 @@
+## @class Lexer
+# ChemPost lexer.
+#
 package Lexer;
 
 require 5.005;
@@ -40,7 +43,9 @@ my @tokens = (
 	'ANYTHING', '.',
 );
 
-
+## @method Lexer()
+# Constructs a new lexer.
+#
 sub new {
 	my ( $self ) = @_;
 	
@@ -54,16 +59,25 @@ sub new {
 	return $this;
 }
 
+## @method public int getlinenumber()
+# Tells current line number.
+#
 sub getlinenumber {
 	my $this = shift;
 	return $this->{"line-number"};
 }
 
+## @method public void from(...)
+# Sets the input for the lexer.
+#
 sub from {
 	my $this = shift;
 	$this->{"lexer"}->from(@_);
 }
 
+## @method public function getyylex()
+# Creates callback for accessing next lexical element.
+#
 sub getyylex {
 	my $self = shift;
 	return sub {
