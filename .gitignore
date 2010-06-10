@@ -14,3 +14,6 @@ mptextmp.*
 # Ignore the Parser generated files
 Parser.output
 lib/Chemistry/Chempost/Parser.pm
+
+# Generated Doxygen documentation
+gendoc/

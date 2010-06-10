@@ -64,6 +64,7 @@ all: compile
 	compile \
 	examples \
 	sample cycles cresols icresols \
+	doc \
 	dist \
 	check-tools \
 	clean distclean
@@ -100,6 +101,9 @@ $(PARSER_MODULE): Parser.y
 	sed 's/\$$T\([1-9]\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
 		| $(YAPP) -m Parser -o - /dev/stdin 2>/dev/null \
 		| sed 's#/dev/stdin#$<#g' >$@
+
+doc: compile
+	doxygen
 
 check-tools:
 	@echo "Checking that all tools are available..."

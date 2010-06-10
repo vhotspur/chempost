@@ -1,7 +1,12 @@
+## @class
+# Compound picture builder.
+#
 package Builder;
 use Chemistry::Chempost::Generator;
 
-
+## @method new()
+# Constructor.
+#
 sub new {
 	my ( $self ) = @_;
 	my $this = { };
@@ -11,7 +16,9 @@ sub new {
 	return $this;
 }
 
-## Creates a deep copy.
+## @method Builder copy()
+# Copy constructor.
+#
 sub copy {
 	my ( $this ) = @_;
 	my $copy = Builder->new();
@@ -28,7 +35,9 @@ sub copy {
 	return $copy;
 }
 
-## Creates a deep copy with remapping.
+## @method Builder copyRemapped(%nodeMapping)
+# Copy constructor with node remapping.
+#
 sub copyRemapped {
 	my ( $this, $nodeMapping ) = @_;
 	my $copy = Builder->new();
@@ -47,6 +56,14 @@ sub copyRemapped {
 	return $copy;
 }
 
+## @method @captionParts _formatCaption(string $caption)
+# Formats node caption, splitting it to parts if necessary.
+# The method spilts the caption into left-middle-right parts and properly
+# formats the subscripts to LaTeX. The splitting is typically done around
+# the C atom.
+# @param $caption Node caption.
+# @return List with left, middle and right part of the caption.
+#
 sub _formatCaption {
 	my ( $this, $caption ) = @_;
 
@@ -88,6 +105,11 @@ sub _formatCaption {
 	return @parts;
 }
 
+## @method void addNode(int $id, string $caption)
+# Adds a node.
+# @param $id Node id.
+# @param $caption Node caption.
+#
 sub addNode {
 	my ( $this, $id, $caption ) = @_;
 
@@ -95,6 +117,11 @@ sub addNode {
 	$this->_addNode($id, \@captionSplitted);
 }
 
+## @method void _addNode(int $id, arrayref $captionSplitted)
+# Adds a node.
+# @param $id Node id.
+# @param $captionSplitted Three-member array with caption parts.
+#
 sub _addNode {
 	my ( $this, $id, $captionSplitted ) = @_;
 	
@@ -103,6 +130,13 @@ sub _addNode {
 	};
 }
 
+## @method void addBond(int $from, int $to, int $type, int $angle)
+# Adds a bond.
+# @param $from Starting node id.
+# @param $to Target node id.
+# @param $type Bond type.
+# @param $angle Bond angle.
+#
 sub addBond {
 	my ( $this, $from, $to, $type, $angle ) = @_;
 
@@ -116,6 +150,10 @@ sub addBond {
 	push(@{$this->{"bonds"}}, \%bond);
 }
 
+## @method void merge(Builder $other)
+# Merges with other builder.
+# @param $other The other builder.
+#
 sub merge {
 	my ( $this, $other ) = @_;
 
@@ -127,6 +165,10 @@ sub merge {
 	push(@{$this->{"bonds"}}, @{$other->{"bonds"}});
 }
 
+## @method void rotate(int $angleShift)
+# Rotates the figure.
+# @param $angleShift Rotation angle.
+#
 sub rotate {
 	my ( $this, $angleShift ) = @_;
 	
@@ -135,6 +177,9 @@ sub rotate {
 	}
 }
 
+## @method Generator createGenerator()
+# Creates compound generator.
+#
 sub createGenerator {
 	my ( $this ) = @_;
 
