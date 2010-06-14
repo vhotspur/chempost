@@ -7,12 +7,13 @@ use Getopt::Std;
 
 
 my %runOptions;
-getopts("g:", \%runOptions)
+getopts("g:o:", \%runOptions)
 	or die "Invalid invocation.";
 
 my %options = (
 	"generate-all" => 1,
 	"generate-only" => { },
+	"output-file" => STDOUT,
 );
 
 if (exists $runOptions{"g"}) {
@@ -20,6 +21,13 @@ if (exists $runOptions{"g"}) {
 	foreach my $k ( split(/,+/, $runOptions{"g"}) ) {
 		$options{"generate-only"}->{$k} = 1;
 	}
+}
+if (exists $runOptions{"o"}) {
+	my $fd;
+	if (not open($fd, ">" . $runOptions{"o"})) {
+		die "Cannot open output file.";
+	}
+	$options{"output-file"} = $fd;
 }
 
 my @inputLines;
@@ -104,7 +112,7 @@ if ($figuresGenerated == 0) {
 	exit 1;
 }
 
-print $output;
+print { $options{"output-file"} } $output;
 
 exit 0;
 
