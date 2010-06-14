@@ -131,6 +131,7 @@ install: compile
 	sed \
 		-e 's#CHEMPOST_PP=.*#CHEMPOST_PP=$(MY_SHAREDIR)/chempost.pl#' \
 		-e 's#PERL=.*#PERL="$(PERL_EXECUTABLE) -I'$(PERL_LIBINSTALLDIR)'"#' \
+		-e 's:MPINPUTS=.*:#&:' -e 's:RUN=:#&:' -e 's:CHEMPOST_BASE=.*:#&:' \
 		< chempost.sh \
 		| $(INSTALL_EXECUTABLE) /dev/stdin $(DESTDIR)$(BINDIR)/chempost
 
