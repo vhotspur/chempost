@@ -28,12 +28,15 @@ PACKAGE = Chemistry/Chempost
 # Static (i.e. not generated) library sources
 LIB_SOURCES = \
 	$(LOCAL_LIB)/$(PACKAGE)/Builder.pm \
+	$(LOCAL_LIB)/$(PACKAGE)/EsmilesLexer.pm \
 	$(LOCAL_LIB)/$(PACKAGE)/Generator.pm
 
 PARSER_MODULE = $(LOCAL_LIB)/$(PACKAGE)/Parser.pm
+ESMILES_PARSER_MODULE = $(LOCAL_LIB)/$(PACKAGE)/EsmilesParser.pm
 
 LIB_SOURCES_ALL = \
 	$(PARSER_MODULE) \
+	$(ESMILES_PARSER_MODULE) \
 	$(LIB_SOURCES)
 
 PERL_EXECUTABLE = perl
@@ -63,18 +66,18 @@ all: compile
 .PHONY: all \
 	compile \
 	examples \
-	sample cycles cresols icresols \
+	sample cycles cresols icresols esmiles \
 	doc \
 	dist \
 	check-tools \
 	clean distclean
 
-compile: $(PARSER_MODULE)
+compile: $(PARSER_MODULE) $(ESMILES_PARSER_MODULE)
 
 run: compile
 	$(PERL) ./chempost.pl <sample.chmp
 
-examples: sample cycles cresols icresols
+examples: sample cycles cresols icresols esmiles
 
 sample: sample.mp
 	$(MPOST) $<
@@ -86,6 +89,9 @@ cresols: cresols.mp
 	$(MPOST) $<
 
 icresols: icresols.mp
+	$(MPOST) $<
+
+esmiles: esmiles.mp
 	$(MPOST) $<
 
 %.mp: chempost.pl $(LIB_SOURCES_ALL) %.chmp
@@ -101,6 +107,18 @@ $(PARSER_MODULE): Parser.y
 	sed 's/\$$T\([1-9]\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
 		| $(YAPP) -m Parser -o - /dev/stdin 2>/dev/null \
 		| sed 's#/dev/stdin#$<#g' >$@
+
+$(ESMILES_PARSER_MODULE): EsmilesParser.y
+	@# this one is run to show the errors of the grammar
+	@# while the second one is adjuste through sed(1) and thus is
+	@# more obscure to use
+	$(YAPP) -v -m EsmilesParser -o $@ $<
+	@# replace $T1 with $_[1] etc.
+	@# replace /dev/stdin by the original name
+	sed 's/\$$T\([1-9]\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
+		| $(YAPP) -m EsmilesParser -o - /dev/stdin 2>/dev/null \
+		| sed 's#/dev/stdin#$<#g' >$@
+
 
 doc: compile
 	doxygen
@@ -151,11 +169,12 @@ install: compile
 
 clean:
 	$(RM) mptextmp.*
-	$(RM) sample.mp cycles.mp cresols.mp sample.log cycles.log cresols.log
-	$(RM) Parser.output
+	$(RM) sample.mp cycles.mp cresols.mp esmiles.mp
+	$(RM) sample.log cycles.log cresols.log esmiles.log
+	$(RM) Parser.output EsmilesParser.output
 
 distclean: clean
-	$(RM) $(PARSER_MODULE)
+	$(RM) $(PARSER_MODULE) $(ESMILES_PARSER_MODULE)
 	$(RM) *.mps
 
 dist:

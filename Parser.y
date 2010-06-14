@@ -6,6 +6,7 @@ use Data::Dumper;
 use Chemistry::Chempost::Builder;
 use Chemistry::Chempost::Generator;
 use Chemistry::Chempost::Lexer;
+use Chemistry::Chempost::EsmilesParser;
 
 %}
 
@@ -245,6 +246,9 @@ compound_command_aux:
 	| compound_command_draw {
 		return $T1;
 	}
+	| compound_command_esmiles {
+		return $T1;
+	}
 	;
 
 compound_command_empty: {
@@ -373,6 +377,24 @@ compound_command_draw:
 		$TT->debug("Macro `%s' ready to be expanded.", $macroName);
 		
 		return $builder;
+	}
+	;
+
+compound_command_esmiles:
+	ESMILES LPAREN NUMBER COMMA NUMBER COMMA STRING RPAREN {
+		my $nodeNumber = $T3->{"value"};
+		my $angle = $T5->{"value"};
+		my $esmiles = $T7->{"value"};
+		my $refLine = $T1->{"line"};
+		
+		my $esmilesParser = new EsmilesParser();
+		$esmilesParser->init();
+		
+		$TT->debug("Parsing ESMILES `%s'.", $esmiles);
+		my $esmilesBuilder = $esmilesParser->parseString($esmiles);
+		$esmilesBuilder->rotate($angle);
+		
+		return $esmilesBuilder;
 	}
 	;
 

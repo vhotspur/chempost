@@ -17,6 +17,7 @@ my @tokens = (
 	'BOND', 'bond',
 	'DRAW', 'draw',
 	'CYCLIC', 'cyclic',
+	'ESMILES', 'esmiles',
 	
 	'UNBOND', 'unbond',
 	'BOND_KIND', 'single|double',

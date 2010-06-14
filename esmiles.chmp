@@ -1,0 +1,7 @@
+compound ethane {
+	esmiles(1, 0, "'H3C''CH3'");
+};
+
+compound propyne {
+	esmiles(1, 0, "'H3C''C'#'CH'");
+};
