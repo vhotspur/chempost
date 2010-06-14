@@ -1,10 +1,13 @@
-EXAMPLES = cresols cycles sample
+EXAMPLES = cresols cycles sample icresols
 
 MPOST_EXECUTABLE = mpost
 MPOST_OPTS = --mem=mpost --tex=latex
 MPOST = $(MPOST_EXECUTABLE) $(MPOST_OPTS)
 
-CHEMPOST = perl -Ilib/ ../chempost.pl
+CHEMPOST_PP = perl -I../lib/ ../chempost.pl
+CHEMPOST = ../chempost.sh
+
+DEPFILE = Makefile.depend
 
 all: $(EXAMPLES)
 
@@ -18,7 +21,15 @@ all: $(EXAMPLES)
 	$(MAKE) -C .. compile
 
 %.mp: %.chmp .compile
-	$(CHEMPOST) <$*.chmp | sed 's#input ChemPost;#input ../ChemPost;#' >$@
+	$(CHEMPOST_PP) <$*.chmp | sed 's#input ChemPost;#input ../ChemPost;#' >$@
+
+depend: .compile
+	$(RM) $(DEPFILE);
+	for i in *.chmp; do \
+		$(CHEMPOST_PP) -g 0 -M - $$i >> $(DEPFILE); \
+	done || exit 0
+
+-include $(DEPFILE)
 
 cresols: cresols.mp
 cycles: cycles.mp
@@ -30,6 +41,7 @@ $(EXAMPLES):
 
 clean:
 	$(RM) *.mp *.log *.mpx *.tex
+	$(RM) $(DEPFILE)
 distclean: clean
 	$(RM) *.mps
 

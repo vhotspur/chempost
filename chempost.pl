@@ -7,13 +7,17 @@ use Getopt::Std;
 
 
 my %runOptions;
-getopts("g:o:", \%runOptions)
+getopts("g:o:M:", \%runOptions)
 	or die "Invalid invocation.";
 
 my %options = (
 	"generate-all" => 1,
 	"generate-only" => { },
+	"output-filename" => "-",
 	"output-file" => STDOUT,
+	"generate-dependencies" => 0,
+	"generate-dependencies-file" => STDOUT,
+	"input-filename" => "-",
 );
 
 if (exists $runOptions{"g"}) {
@@ -27,11 +31,23 @@ if (exists $runOptions{"o"}) {
 	if (not open($fd, ">" . $runOptions{"o"})) {
 		die "Cannot open output file.";
 	}
+	$options{"output-filename"} = $runOptions{"o"};
 	$options{"output-file"} = $fd;
+}
+if (exists $runOptions{"M"}) {
+	if ($runOptions{"M"} eq "-") {
+		$options{"generate-dependencies-file"} = STDOUT;
+	} else {
+		my $fd;
+		if (not open($fd, ">" . $runOptions{"M"})) {
+			die "Cannot open dependency file for writing.";
+		}
+		$options{"generate-dependencies-file"} = $fd;
+	}
+	$options{"generate-dependencies"} = 1;
 }
 
 my @inputLines;
-my $inputFilename;
 if (@ARGV > 0) {
 	if (@ARGV != 1) {
 		die "Too many input files.";
@@ -40,16 +56,16 @@ if (@ARGV > 0) {
 		or die "Cannot open input file.";
 	@inputLines = <INPUT>;
 	close(INPUT);
-	$inputFilename = $ARGV[0];
+	$options{"input-filename"} = $ARGV[0];
 } else {
 	@inputLines = <STDIN>;
-	$inputFilename = "<stdin>";
+	$options{"input-filename"} = "<stdin>";
 }
 
 my $input = join("", @inputLines);
 my $parser = new Parser();
 $parser->init();
-my $figures = $parser->parseString($inputFilename, $input);
+my $figures = $parser->parseString($options{"input-filename"}, $input);
 
 my $scriptHeader = <<EOF_HEADER;
 input TEX;
@@ -95,6 +111,13 @@ end
 
 EOF_FOOTER
 
+my $dependencies = <<EOF_DEPENDENCY_HEADER;
+# DO NOT EDIT!
+# This file is generated and all changes will be lost.
+#
+
+EOF_DEPENDENCY_HEADER
+
 my $output = $scriptHeader;
 
 my $figuresGenerated = 0;
@@ -103,9 +126,18 @@ foreach my $f ( @{$figures} ) {
 		$output .= $f->{"code"};
 		$figuresGenerated++;
 	}
+	$dependencies .= sprintf("%s.mps: %s\n\t\$(CHEMPOST) -g %s \$<\n",
+		$f->{"id"}, $options{"input-filename"}, $f->{"id"});
 }
 
 $output .= $scriptFooter;
+
+if ($options{"generate-dependencies"}) {
+	print { $options{"generate-dependencies-file"} } $dependencies;
+	if ($figuresGenerated == 0) {
+		exit 2;
+	}
+}
 
 if ($figuresGenerated == 0) {
 	printf STDERR "Error: no figures generated!\n";
@@ -113,6 +145,8 @@ if ($figuresGenerated == 0) {
 }
 
 print { $options{"output-file"} } $output;
+
+
 
 exit 0;
 

@@ -5,3 +5,5 @@
 mptextmp.*
 *.log
 *.tex
+# Dependency Makefiles
+Makefile.depend
