@@ -1,0 +1,7 @@
+# Generated MPS figures...
+*.mps
+*.mp
+# ... and MetaPost auxilary files
+mptextmp.*
+*.log
+*.tex
