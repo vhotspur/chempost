@@ -398,6 +398,7 @@ node_number_list:
 sub init {
 	my ( $this ) = @_;
 	$this->{"macros"} = { };
+	$this->{"debug"} = 0;
 }
 
 ## @method public FigureList parseString(string $filename, string $text)
@@ -545,7 +546,20 @@ sub _recovered {
 #
 sub debug {
 	my ( $this, $format, @params ) = @_;
-	#printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
+	unless ($this->{"debug"}) {
+		return;
+	}
+	
+	printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
+}
+
+## @method procted void setDebug(bool $debug = true)
+# Turns on/off debugging messages.
+# @param $debug Whether to print debugging messages.
+#
+sub setDebug {
+	my ( $this, $debug ) = ( @_, 1 );
+	$this->{"debug"} = $debug;
 }
 
 ## @method private void _msg(int $line, enum $kind, string $format, ...)

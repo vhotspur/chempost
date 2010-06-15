@@ -7,7 +7,7 @@ use Getopt::Std;
 
 
 my %runOptions;
-getopts("g:o:M:", \%runOptions)
+getopts("g:o:M:d", \%runOptions)
 	or die "Invalid invocation.";
 
 my %options = (
@@ -18,6 +18,7 @@ my %options = (
 	"generate-dependencies" => 0,
 	"generate-dependencies-file" => STDOUT,
 	"input-filename" => "-",
+	"debug" => 0,
 );
 
 if (exists $runOptions{"g"}) {
@@ -46,6 +47,9 @@ if (exists $runOptions{"M"}) {
 	}
 	$options{"generate-dependencies"} = 1;
 }
+if (exists $runOptions{"d"}) {
+	$options{"debug"} = 1;
+}
 
 my @inputLines;
 if (@ARGV > 0) {
@@ -65,6 +69,7 @@ if (@ARGV > 0) {
 my $input = join("", @inputLines);
 my $parser = new Parser();
 $parser->init();
+$parser->setDebug($options{"debug"});
 my $figures = $parser->parseString($options{"input-filename"}, $input);
 
 my $scriptHeader = <<EOF_HEADER;
