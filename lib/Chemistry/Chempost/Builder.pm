@@ -75,6 +75,9 @@ sub _formatCaption {
 	if ($caption eq "NH2") {
 		return ( "", "\\text{N}", "\\text{H}_2" );
 	}
+	if ($caption eq "O") {
+		return ( "", "\\text{O}", "" );
+	}
 	
 	# otherwise, try to split it around 'C' atom and
 	# format the numbers as subscripts

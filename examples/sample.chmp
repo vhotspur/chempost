@@ -16,3 +16,12 @@ compound isobutane {
 	bond(2, 4, single, 90);
 };
 
+compound acetone2 {
+	node(1, "H3C");
+	node(2, "CH2");
+	node(4, "O");
+	node(3, "CH3");
+	bond(1, 2, single, 0);
+	bond(2, 3, single, 0);
+	bond(2, 4, double, 90);
+};
