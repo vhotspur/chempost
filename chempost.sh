@@ -16,7 +16,7 @@ CHEMPOST_PP="${CHEMPOST_BASE}chempost.pl"
 PERL="perl -I${CHEMPOST_BASE}lib"
 
 # MPINPUTS shall point to ChemPost.mp file
-MPINPUTS=":${MPINPUTS}:${CHEMPOST_BASE}"
+export MPINPUTS=":${MPINPUTS}:${CHEMPOST_BASE}"
 
 # MetaPost interpreter
 METAPOST="mpost --mem=mpost --tex=latex --jobname=tmp-chempost --interaction=nonstopmode"
