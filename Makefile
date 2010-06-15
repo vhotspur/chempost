@@ -65,8 +65,7 @@ all: compile
 
 .PHONY: all \
 	compile \
-	examples \
-	sample cycles cresols icresols esmiles \
+	example \
 	doc \
 	dist \
 	check-tools \
@@ -77,25 +76,8 @@ compile: $(PARSER_MODULE) $(ESMILES_PARSER_MODULE)
 run: compile
 	$(PERL) ./chempost.pl <sample.chmp
 
-examples: sample cycles cresols icresols esmiles
-
-sample: sample.mp
-	$(MPOST) $<
-
-cycles: cycles.mp
-	$(MPOST) $<
-
-cresols: cresols.mp
-	$(MPOST) $<
-
-icresols: icresols.mp
-	$(MPOST) $<
-
-esmiles: esmiles.mp
-	$(MPOST) $<
-
-%.mp: chempost.pl $(LIB_SOURCES_ALL) %.chmp
-	$(PERL) ./chempost.pl <$*.chmp >$@
+example:
+	$(MAKE) -C examples/ "CHEMPOST_DEPENDS=$(LIB_SOURCES_ALL)"
 
 $(PARSER_MODULE): Parser.y
 	@# this one is run to show the errors of the grammar
@@ -164,25 +146,29 @@ install: compile
 	sed \
 		-e 's#CHEMPOST_PP=.*#CHEMPOST_PP=$(MY_SHAREDIR)/chempost.pl#' \
 		-e 's#PERL=.*#PERL="$(PERL_EXECUTABLE) -I'$(PERL_LIBINSTALLDIR)'"#' \
+		-e 's:MPINPUTS=.*:#&:' -e 's:RUN=:#&:' -e 's:CHEMPOST_BASE=.*:#&:' \
 		< chempost.sh \
 		| $(INSTALL_EXECUTABLE) /dev/stdin $(DESTDIR)$(BINDIR)/chempost
 
 clean:
-	$(RM) mptextmp.*
-	$(RM) sample.mp cycles.mp cresols.mp esmiles.mp
-	$(RM) sample.log cycles.log cresols.log esmiles.log
 	$(RM) Parser.output EsmilesParser.output
+	$(MAKE) -C examples clean
 
 distclean: clean
 	$(RM) $(PARSER_MODULE) $(ESMILES_PARSER_MODULE)
 	$(RM) *.mps
+	$(MAKE) -C examples distclean
 
 dist:
 	mkdir $(DISTNAME)
+	
 	cp Makefile ChemPost.mp Parser.y chempost.pl $(DISTNAME)
 	cp chempost.sh $(DISTNAME)
-	cp sample.chmp cycles.chmp cresols.chmp $(DISTNAME)
+	
 	mkdir -p $(DISTNAME)/$(LOCAL_LIB)/$(PACKAGE)
 	cp $(LIB_SOURCES) $(DISTNAME)/$(LOCAL_LIB)/$(PACKAGE)/
+	
+	mkdir -p $(DISTNAME)/examples
+	cp examples/Makefile examples/*.chmp $(DISTNAME)/examples
 	tar -czf $(ARCHIVE) $(DISTNAME)
 	$(RM) $(DISTNAME)

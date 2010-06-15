@@ -8,7 +8,7 @@ compound cyclohexanol {
 	bond(2, 7, single, 30);
 };
 
-compound phenol {
+compound phenol3 {
 	cyclic("1-2:3-4:5-6:", 90);
 	node(7, "OH");
 	bond(3, 7, single, 90);
