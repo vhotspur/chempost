@@ -31,6 +31,55 @@ molecule:
 
 molecule_node_list:
 	molecule_node {
+		return $T1;
+	}
+	|
+	molecule_node_list molecule_bond molecule_node {
+		my $mainBuilder = $T1->{"builder"};
+		my $mainConnectingNodeId = $T1->{"connect-id"};
+		my $newBuilder = $T3->{"builder"};
+		my $newConnectingNodeId = $T3->{"connect-id"};
+		my $bondKind = $T2;
+		
+		$mainBuilder->merge($newBuilder);
+		$mainBuilder->addBond($mainConnectingNodeId, $newConnectingNodeId, $bondKind, 0);
+		
+		my %out = (
+			"builder" => $mainBuilder,
+			"connect-id" => $newConnectingNodeId
+		);
+		
+		return \%out;
+	}
+	;
+
+molecule_node:
+	molecule_node_aux node_branches {
+		my $mainBuilder = $T1->{"builder"};
+		my $mainConnectingNodeId = $T1->{"connect-id"};
+		my $branches = $T2;
+		
+		my @angles = ( 270, 90 );
+		foreach my $b ( 0, 1 ) {
+			if ($branches->[$b]->{"builder"}) {
+				$mainBuilder->merge($branches->[$b]->{"builder"});
+				$mainBuilder->addBond($mainConnectingNodeId,
+					$branches->[$b]->{"connect-id"},
+					"single",
+					$angles[$b]);
+			}
+		}
+		
+		my %out = (
+			"builder" => $mainBuilder,
+			"connect-id" => $mainConnectingNodeId
+		);
+		return \%out;
+	}
+	;
+
+molecule_node_aux:
+	molecule_node_aux_caption {
 		my $nodeCaption = $T1;
 		
 		my $nodeId = $TT->_getNextNodeId();
@@ -45,33 +94,41 @@ molecule_node_list:
 		
 		return \%out;
 	}
-	|
-	molecule_node_list molecule_bond molecule_node {
-		my $existingBuilder = $T1->{"builder"};
-		my $connectingNodeId = $T1->{"connect-id"};
-		my $bondKind = $T2;
-		my $newNodeCaption = $T3;
-		
-		my $newNodeId = $TT->_getNextNodeId();
-		
-		$existingBuilder->addNode($newNodeId, $newNodeCaption);
-		$existingBuilder->addBond($connectingNodeId, $newNodeId, $bondKind, 0);
-		
-		my %out = (
-			"builder" => $existingBuilder,
-			"connect-id" => $newNodeId
-		);
-		
-		return \%out;
-	}
 	;
 
-molecule_node:
+molecule_node_aux_caption:
 	ATOM_ORGANIC_SUBSET {
 		return $T1->{"value"};
 	}
 	| DESCRIBED_NODE {
 		return $T1->{"value"};
+	}
+	;
+
+node_branches:
+	branch branch {
+		my @result = ( $T1, $T2 );
+		return \@result;
+	}
+	| branch {
+		my %empty = ( "builder" => 0 );
+		my @result = ( $T1, \%empty );
+		return \@result;
+	}
+	| { #empty
+		my %empty = ( "builder" => 0 );
+		my @result = ( \%empty, \%empty );
+		return \@result;
+	}
+	;
+
+branch:
+	LPAREN molecule_node_list RPAREN {
+		return $T2;
+	}
+	| LPAREN RPAREN { # empty branch
+		my %empty = ( "builder" => 0 );
+		return \%empty;
 	}
 	;
 

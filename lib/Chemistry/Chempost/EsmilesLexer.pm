@@ -24,6 +24,8 @@ my @tokens = (
 	'DESCRIBED_NODE', "'([^']*)'", sub {
 		return $1;
 	},
+	'LPAREN', '[\(]',
+	'RPAREN', '[\)]',
 	'ANYTHING', '.',
 );
 

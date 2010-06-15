@@ -5,3 +5,10 @@ compound ethane {
 compound propyne {
 	esmiles(1, 0, "'H3C''C'#'CH'");
 };
+
+compound isobutane2 {
+	esmiles(1, 0, "'H3C''CH2'('CH3')'CH3'");
+};
+compound isobutane3 {
+	esmiles(1, 0, "'H3C''CH2'()('CH3')'CH3'");
+};
