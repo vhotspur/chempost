@@ -24,62 +24,110 @@ esmiles:
 	;
 
 molecule:
-	molecule_node_list {
+	bonded_molecule {
 		return $T1->{"builder"};
 	}
 	;
 
-molecule_node_list:
-	molecule_node {
+bonded_molecule:
+	bonded_atom_with_branches_list {
 		return $T1;
-	}
-	|
-	molecule_node_list molecule_bond molecule_node {
-		my $mainBuilder = $T1->{"builder"};
-		my $mainConnectingNodeId = $T1->{"connect-id"};
-		my $newBuilder = $T3->{"builder"};
-		my $newConnectingNodeId = $T3->{"connect-id"};
-		my $bondKind = $T2;
-		
-		$mainBuilder->merge($newBuilder);
-		$mainBuilder->addBond($mainConnectingNodeId, $newConnectingNodeId, $bondKind, 0);
-		
-		my %out = (
-			"builder" => $mainBuilder,
-			"connect-id" => $newConnectingNodeId
-		);
-		
-		return \%out;
 	}
 	;
 
-molecule_node:
-	molecule_node_aux node_branches {
-		my $mainBuilder = $T1->{"builder"};
-		my $mainConnectingNodeId = $T1->{"connect-id"};
-		my $branches = $T2;
+bonded_atom_with_branches_list:
+	bonded_atom_with_branches {
+		return $T1;
+	}
+	| bonded_atom_with_branches_list bonded_atom_with_branches {
+		my $left = $T1;
+		my $right = $T2;
 		
+		$left->{"builder"}->merge($right->{"builder"});
+		$left->{"builder"}->addBond($left->{"right-atom-id"},
+			$right->{"left-atom-id"},
+			$right->{"left-bond"},
+			0);
+		$left->{"right-atom-id"} = $right->{"right-atom-id"};
+		
+		return $left;
+	}
+	;
+
+bonded_atom_with_branches:
+	bonded_atom {
+		return $T1;
+	}
+	| bonded_atom branch_list {
+		my $result = $T1;
+		my @branches = @{$T2};
+		
+		
+		
+		# connect the branches
+		# currently, we enforce two branches
+		while (scalar(@branches) < 2) {
+			push @branches, { "builder" => 0 };
+		}
 		my @angles = ( 270, 90 );
 		foreach my $b ( 0, 1 ) {
-			if ($branches->[$b]->{"builder"}) {
-				$mainBuilder->merge($branches->[$b]->{"builder"});
-				$mainBuilder->addBond($mainConnectingNodeId,
-					$branches->[$b]->{"connect-id"},
-					"single",
+			if ($branches[$b]->{"builder"}) {
+				$result->{"builder"}->merge($branches[$b]->{"builder"});
+				$result->{"builder"}->addBond($result->{"right-atom-id"},
+					$branches[$b]->{"left-atom-id"},
+					$branches[$b]->{"left-bond"},
 					$angles[$b]);
 			}
 		}
 		
-		my %out = (
-			"builder" => $mainBuilder,
-			"connect-id" => $mainConnectingNodeId
-		);
-		return \%out;
+		return $result;
 	}
 	;
 
-molecule_node_aux:
-	molecule_node_aux_caption {
+bonded_atom:
+	bond atom {
+		my $atom = $T2;
+		my $bond = $T1;
+		
+		$atom->{"left-bond"} = $bond;
+		
+		return $atom;
+	}
+	;
+
+branch_list:
+	branch {
+		return [ $T1 ];
+	}
+	| branch_list branch {
+		my @result = @{$T1};
+		push @result, $T2;
+		return \@result;
+	}
+	;
+
+branch:
+	LPAREN RPAREN {
+		return {
+			"builder" => 0
+		};
+	}
+	| LPAREN bonded_molecule RPAREN {
+		return $T2;
+	}
+	;
+
+bond:
+	BOND {
+		return $T1->{"value"};
+	}
+	| { # empty
+		return "single";
+	}
+	;
+
+atom:
+	captioned_atom {
 		my $nodeCaption = $T1;
 		
 		my $nodeId = $TT->_getNextNodeId();
@@ -87,16 +135,15 @@ molecule_node_aux:
 		my $builder = Builder->new();
 		$builder->addNode($nodeId, $nodeCaption);
 		
-		my %out = (
+		return {
 			"builder" => $builder,
-			"connect-id" => $nodeId
-		);
-		
-		return \%out;
+			"left-atom-id" => $nodeId,
+			"right-atom-id" => $nodeId,
+		};
 	}
 	;
 
-molecule_node_aux_caption:
+captioned_atom:
 	ATOM_ORGANIC_SUBSET {
 		return $T1->{"value"};
 	}
@@ -105,41 +152,6 @@ molecule_node_aux_caption:
 	}
 	;
 
-node_branches:
-	branch branch {
-		my @result = ( $T1, $T2 );
-		return \@result;
-	}
-	| branch {
-		my %empty = ( "builder" => 0 );
-		my @result = ( $T1, \%empty );
-		return \@result;
-	}
-	| { #empty
-		my %empty = ( "builder" => 0 );
-		my @result = ( \%empty, \%empty );
-		return \@result;
-	}
-	;
-
-branch:
-	LPAREN molecule_node_list RPAREN {
-		return $T2;
-	}
-	| LPAREN RPAREN { # empty branch
-		my %empty = ( "builder" => 0 );
-		return \%empty;
-	}
-	;
-
-molecule_bond:
-	BOND {
-		return $T1->{"value"};
-	}
-	| { # empty
-		return "single";
-	}
-	;
 	
 %%
 
