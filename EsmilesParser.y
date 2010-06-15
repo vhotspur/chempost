@@ -164,7 +164,7 @@ sub init {
 	my ( $this ) = @_;
 }
 
-## @method public FigureList parseString(string $filename, string $text)
+## @method public FigureList parseString(string $text)
 # Parses given string into list of figures.
 # @param $text ESMILES description of the molecule.
 # @return List of figures generated from given string.
