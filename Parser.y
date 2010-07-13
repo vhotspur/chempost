@@ -239,6 +239,9 @@ compound_command_aux:
 	| compound_command_bond {
 		return $T1;
 	}
+	| compound_command_colorbond {
+		return $T1;
+	}
 	| compound_command_unbond {
 		return $T1;
 	}
@@ -275,6 +278,14 @@ compound_command_bond:
 	BOND LPAREN NUMBER COMMA NUMBER COMMA BOND_KIND COMMA NUMBER RPAREN {
 		my $builder = Builder->new();
 		$builder->addBond($T3->{"value"}, $T5->{"value"}, $T7->{"value"}, $T9->{"value"});
+		return $builder;
+	}
+	;
+
+compound_command_colorbond:
+	COLORBOND LPAREN NUMBER COMMA NUMBER COMMA BOND_KIND COMMA NUMBER COMMA color RPAREN {
+		my $builder = Builder->new();
+		$builder->addBond($T3->{"value"}, $T5->{"value"}, $T7->{"value"}, $T9->{"value"}, $T11);
 		return $builder;
 	}
 	;

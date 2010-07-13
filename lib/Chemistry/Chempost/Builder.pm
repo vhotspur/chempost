@@ -32,7 +32,8 @@ sub copy {
 	
 	foreach my $bond ( @{$this->{"bonds"}}) {
 		$copy->addBond($bond->{"from"}, $bond->{"to"},
-			$bond->{"type"}, $bond->{"angle"});
+			$bond->{"type"}, $bond->{"angle"},
+			$bond->{"color"});
 	}
 	
 	return $copy;
@@ -55,7 +56,8 @@ sub copyRemapped {
 	foreach my $bond ( @{$this->{"bonds"}}) {
 		my $from = $nodeMapping->{ $bond->{"from"} };
 		my $to = $nodeMapping->{ $bond->{"to"} };
-		$copy->addBond($from, $to, $bond->{"type"}, $bond->{"angle"});
+		$copy->addBond($from, $to, $bond->{"type"}, $bond->{"angle"},
+			$bond->{"color"});
 	}
 	
 	return $copy;
@@ -113,7 +115,7 @@ sub _formatCaption {
 	return @parts;
 }
 
-## @method void addNode(int $id, string $caption)
+## @method void addNode(int $id, string $caption, struct $color)
 # Adds a node.
 # @param $id Node id.
 # @param $caption Node caption.
@@ -126,7 +128,7 @@ sub addNode {
 	$this->_addNode($id, \@captionSplitted, $color);
 }
 
-## @method void _addNode(int $id, arrayref $captionSplitted)
+## @method void _addNode(int $id, arrayref $captionSplitted, struct $color)
 # Adds a node.
 # @param $id Node id.
 # @param $captionSplitted Three-member array with caption parts.
@@ -149,13 +151,14 @@ sub _addNode {
 # @param $angle Bond angle.
 #
 sub addBond {
-	my ( $this, $from, $to, $type, $angle ) = @_;
+	my ( $this, $from, $to, $type, $angle, $color ) = @_;
 
 	my %bond = (
 		"from" => $from,
 		"to" => $to,
 		"type" => $type,
-		"angle" => $angle
+		"angle" => $angle,
+		"color" => $color,
 	);
 
 	push(@{$this->{"bonds"}}, \%bond);
@@ -214,7 +217,8 @@ sub createGenerator {
 			$bond->{"from"},
 			$bond->{"to"},
 			$bond->{"type"},
-			$bond->{"angle"}
+			$bond->{"angle"},
+			$bond->{"color"},
 		);
 	}
 

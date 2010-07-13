@@ -83,7 +83,7 @@ $(PARSER_MODULE): Parser.y
 	$(YAPP) -v -m Parser -o $@ $<
 	@# replace $T1 with $_[1] etc.
 	@# replace /dev/stdin by the original name
-	sed 's/\$$T\([1-9]\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
+	sed 's/\$$T\([1-9]\+\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
 		| $(YAPP) -m Parser -o - /dev/stdin 2>/dev/null \
 		| sed 's#/dev/stdin#$<#g' >$@
 

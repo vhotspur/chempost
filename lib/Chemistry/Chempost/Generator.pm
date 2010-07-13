@@ -81,20 +81,22 @@ sub setNodeColor {
 	$this->{"nodes"}->{$id}->{"color"} = $color;
 }
 
-## @method void addBond(int $from, int $to, int $type, int $angle)
+## @method void addBond(int $from, int $to, int $type, int $angle, struct $color)
 # Adds a bond between two nodes.
 # @param $from Starting node.
 # @param $to Target node.
 # @param $type Bond type.
 # @param $angle Bond angle (0 being at 3 o'clock).
+# @param $color Bond color.
 #
 sub addBond {
-	my ( $this, $from, $to, $type, $angle ) = @_;
+	my ( $this, $from, $to, $type, $angle, $color ) = @_;
 
 	push(@{$this->{"nodes"}->{$from}->{"neighbours"}}, {
 		"type" => $type,
 		"target" => $to,
-		"angle" => $angle
+		"angle" => $angle,
+		"color" => $color,
 	});
 	$this->{"nodes"}->{$to}->{"inverse-neighbours-count"}++;
 }
@@ -131,6 +133,27 @@ sub _formatNodeCaption {
 	);
 }
 
+## @method string _getMetapostColor(struct $color, string $defaultColor)
+# Tells color in MetaPost-recognisable manner.
+# The @p $color shall have the @c metapost field with the color description.
+# 
+# The @p $defaultColor is expected to already be in MetaPost format.
+#
+# @param $color The color structure.
+# @param $defaultColor Default color.
+# @return MetaPost compliant color specification.
+#
+sub _getMetapostColor {
+	my ( $this, $colorStruct, $defaultColor ) = @_;
+	
+	my $color = $defaultColor;
+	if (($colorStruct != 0) and (exists $colorStruct->{"metapost"})) {
+		$color = $colorStruct->{"metapost"};
+	}
+	
+	return $color;
+}
+
 ## @method string _getNodeMetapostColor(int $nodeId)
 # Tells color of a node in format suitable for MetaPost.
 # @param $nodeId Node id.
@@ -139,12 +162,9 @@ sub _formatNodeCaption {
 sub _getNodeMetapostColor {
 	my ( $this, $nodeId ) = @_;
 	
-	my $color = $this->{"nodes"}->{$nodeId}->{"color"};
-	if (($color == 0) or (not exists $color->{"metapost"})) {
-		$color = "defaultnodecolor";
-	} else {
-		$color = $color->{"metapost"};
-	}
+	return $this->_getMetapostColor(
+		$this->{"nodes"}->{$nodeId}->{"color"},
+		"defaultnodecolor");
 	
 	return $color;
 }
@@ -165,7 +185,7 @@ sub _drawNode {
 			$this->_formatNodeCaption($current),
 			$pNeighbour->{"angle"},
 			$this->_bondNumber($pNeighbour->{"type"}),
-			"defaultbondcolor",
+			$this->_getMetapostColor($pNeighbour->{"color"}, "defaultbondcolor"),
 			$this->_formatNodeCaption($target),
 			$this->_getNodeMetapostColor($target),
 		);

@@ -16,6 +16,7 @@ my @tokens = (
 	'NODE', 'node',
 	'COLORNODE', 'colornode',
 	'BOND', 'bond',
+	'COLORBOND', 'colorbond',
 	'DRAW', 'draw',
 	'CYCLIC', 'cyclic',
 	
