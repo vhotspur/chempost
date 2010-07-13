@@ -1,4 +1,4 @@
-EXAMPLES = cresols cycles sample icresols
+EXAMPLES = cresols cycles sample icresols colors
 
 MPOST_EXECUTABLE = mpost
 MPOST_OPTS = --mem=mpost --tex=latex
@@ -35,6 +35,7 @@ cresols: cresols.mp
 cycles: cycles.mp
 icresols: icresols.mp
 sample: sample.mp
+colors: colors.mp
 
 $(EXAMPLES):
 	$(MPOST) $@.mp

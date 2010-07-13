@@ -233,6 +233,9 @@ compound_command_aux:
 	| compound_command_node {
 		return $T1;
 	}
+	| compound_command_colornode {
+		return $T1;
+	}
 	| compound_command_bond {
 		return $T1;
 	}
@@ -256,6 +259,14 @@ compound_command_node:
 	NODE LPAREN NUMBER COMMA STRING RPAREN {
 		my $builder = Builder->new();
 		$builder->addNode($T3->{"value"}, $T5->{"value"});
+		return $builder;
+	}
+	;
+
+compound_command_colornode:
+	COLORNODE LPAREN NUMBER COMMA STRING COMMA color RPAREN {
+		my $builder = Builder->new();
+		$builder->addNode($T3->{"value"}, $T5->{"value"}, $T7);
 		return $builder;
 	}
 	;
@@ -385,6 +396,15 @@ node_number_list:
 		my @list = @{$T1};
 		push @list, $T3->{"value"};
 		return \@list;
+	}
+	;
+
+color:
+	COLOR {
+		my %color = (
+			"metapost" => $T1->{"value"},
+		);
+		return \%color;
 	}
 	;
 

@@ -24,7 +24,10 @@ sub copy {
 	my $copy = Builder->new();
 
 	foreach my $id ( keys(%{$this->{"nodes"}}) ) {
-		$copy->_addNode($id, $this->{"nodes"}->{$id}->{"caption"});
+		$copy->_addNode($id,
+			$this->{"nodes"}->{$id}->{"caption"},
+			$this->{"nodes"}->{$id}->{"color"},
+		);
 	}
 	
 	foreach my $bond ( @{$this->{"bonds"}}) {
@@ -44,7 +47,9 @@ sub copyRemapped {
 
 	foreach my $id ( keys(%{$this->{"nodes"}}) ) {
 		$copy->_addNode($nodeMapping->{$id},
-			$this->{"nodes"}->{$id}->{"caption"});
+			$this->{"nodes"}->{$id}->{"caption"},
+			$this->{"nodes"}->{$id}->{"color"},
+		);
 	}
 	
 	foreach my $bond ( @{$this->{"bonds"}}) {
@@ -112,24 +117,27 @@ sub _formatCaption {
 # Adds a node.
 # @param $id Node id.
 # @param $caption Node caption.
+# @param $color Node color.
 #
 sub addNode {
-	my ( $this, $id, $caption ) = @_;
+	my ( $this, $id, $caption, $color ) = ( @_, 0 );
 
 	my @captionSplitted = $this->_formatCaption($caption);
-	$this->_addNode($id, \@captionSplitted);
+	$this->_addNode($id, \@captionSplitted, $color);
 }
 
 ## @method void _addNode(int $id, arrayref $captionSplitted)
 # Adds a node.
 # @param $id Node id.
 # @param $captionSplitted Three-member array with caption parts.
+# @param $color Node color.
 #
 sub _addNode {
-	my ( $this, $id, $captionSplitted ) = @_;
+	my ( $this, $id, $captionSplitted, $color ) = @_;
 	
 	$this->{"nodes"}->{$id} = {
 		"caption" => $captionSplitted,
+		"color" => $color,
 	};
 }
 
@@ -195,6 +203,9 @@ sub createGenerator {
 	foreach my $id ( keys(%{$this->{"nodes"}}) ) {
 		$generator->setNodeInfo($id,
 			@{$this->{"nodes"}->{$id}->{"caption"}}
+		);
+		$generator->setNodeColor($id,
+			$this->{"nodes"}->{$id}->{"color"}
 		);
 	}
 
