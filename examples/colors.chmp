@@ -4,6 +4,6 @@ compound alkene {
 	colornode(3, "CH", blue);
 	node(4, "R2");
 	bond(1, 2, single, 0);
-	colorbond(2, 3, double, 0, blue);
+	colorbond(2, 3, double, 0, "#00f");
 	bond(3, 4, single, 0);
 };

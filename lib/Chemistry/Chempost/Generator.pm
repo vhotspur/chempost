@@ -135,9 +135,13 @@ sub _formatNodeCaption {
 
 ## @method string _getMetapostColor(struct $color, string $defaultColor)
 # Tells color in MetaPost-recognisable manner.
-# The @p $color shall have the @c metapost field with the color description.
-# 
-# The @p $defaultColor is expected to already be in MetaPost format.
+#
+# The actual is determined by the contents of the $p $color structure.
+# First, if the @c metapost field is present, its color is used.
+# Next, @c rgb field is tested and is expected to be a 3-member array
+# with red, green and blue components within range 0-255.
+# Otherwise, @p $defaultColor is used (which is expected
+# to already be in MetaPost format).
 #
 # @param $color The color structure.
 # @param $defaultColor Default color.
@@ -147,8 +151,15 @@ sub _getMetapostColor {
 	my ( $this, $colorStruct, $defaultColor ) = @_;
 	
 	my $color = $defaultColor;
-	if (($colorStruct != 0) and (exists $colorStruct->{"metapost"})) {
+	
+	if (exists $colorStruct->{"metapost"}) {
 		$color = $colorStruct->{"metapost"};
+	} elsif (exists $colorStruct->{"rgb"}) {
+		my @rgb = @{$colorStruct->{"rgb"}};
+		for (my $i = 0; $i < @rgb; $i++) {
+			$rgb[$i] = ($rgb[$i] + 0.0)/255.0;
+		}
+		$color = sprintf("(%.4f,%.4f,%.4f)", @rgb);
 	}
 	
 	return $color;
