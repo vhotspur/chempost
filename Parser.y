@@ -25,11 +25,6 @@ chempost:
 	includes macro_definitions compound_list {
 		return $T3;
 	}
-	| error {
-		$TT->_recovered();
-		my @result = ();
-		return \@result;
-	}
 	;
 
 includes:
@@ -138,12 +133,17 @@ compound_list:
 		}
 		return \@result;
 	}
-	|
-	compound_list compound {
+	| compound_list compound {
 		my @result = ( @{$T1}, $T2 );
 		if ($T2 == 0) {
 			@result = ( @{$T1} );
 		}
+		return \@result;
+	}
+	| compound_list error {
+		$TT->_recovered();
+		
+		my @result = ();
 		return \@result;
 	}
 	;
@@ -538,15 +538,40 @@ sub getyyerror {
 sub _parseError {
 	my ( $this ) = @_;
 	my @expected = $this->YYExpect();
-	my $expected = $expected[0];
+	
+	# drop the 'error' from expected
+	for (my $i = 0; $i < @expected; $i++) {
+		if ($expected[$i] eq "error") {
+			splice(@expected, $i, 1);
+			$i--;
+		}
+	}
+	# construct human-readable list of expected tokens
+	my $expected = "";
+	for (my $i = 0; $i < @expected; $i++) {
+		if (@expected > 1) {
+			if ($i + 1 == @expected) {
+				$expected .= " or ";
+			} elsif ($i > 0) {
+				$expected .= ", ";
+			}
+		}
+		$expected .= sprintf("`%s'", $expected[$i]);
+	}
+	
+	if (@expected == 0) {
+		$this->error(0, "Internal error, expected field is empty!");
+		$expected = "compound";
+	}
+	
 	my $curval = $this->YYCurval;
 	if (defined $curval) {
 		my $found = $this->YYCurval->{"value"};
 		my $line = $this->YYCurval->{"line"};
-		$this->error($line, "Expected `%s', found `%s' instead.", $expected, $found);
+		$this->error($line, "Expected %s, found `%s' instead.", $expected, $found);
 	} else {
 		my $line = $this->{"lexer"}->getlinenumber();
-		$this->error($line, "Expected `%s' instead of end of file.", $expected);
+		$this->error($line, "Expected %s instead of end of file.", $expected);
 	}
 		
 }
