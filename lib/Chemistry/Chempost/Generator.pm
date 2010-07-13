@@ -127,13 +127,15 @@ sub _drawNode {
 	foreach my $pNeighbour ( @{$this->{"nodes"}->{$current}->{"neighbours"}} ) {
 		my $target = $pNeighbour->{"target"};
 		# $result .= sprintf("\tpair C%s;\n", $target);
-		$result .= sprintf("\tC%s := drawnextnode(C%s, %s, %d, %d, %s);\n",
+		$result .= sprintf("\tC%s := drawnextnode(C%s, %s, %d, %d, %s, %s, %s);\n",
 			$target,
 			$current,
 			$this->_formatNodeCaption($current),
 			$pNeighbour->{"angle"},
 			$this->_bondNumber($pNeighbour->{"type"}),
-			$this->_formatNodeCaption($target)
+			"defaultbondcolor",
+			$this->_formatNodeCaption($target),
+			"defaultnodecolor",
 		);
 
 		if ($this->{"nodes"}->{$target}->{"drawn"}) {
@@ -157,9 +159,10 @@ sub generateMetaPost {
 	my $result = "";
 	$result .= sprintf("\tpair C[];\n", $first);
 
-	$result .= sprintf("\tC%s := drawfirstnode( (0,0), \"%s\");\n",
+	$result .= sprintf("\tC%s := drawfirstnode( (0,0), \"%s\", %s);\n",
 		$first,
-		join("", @{$this->{"nodes"}->{$first}->{"caption"}})
+		join("", @{$this->{"nodes"}->{$first}->{"caption"}}),
+		"defaultnodecolor",
 	);
 
 	$result .= $this->_drawNode($first);
