@@ -104,6 +104,12 @@ sub _formatCaption {
 
 		$caption = $remainder;
 	}
+	
+	# if there was no 'C', we will rather put the whole text
+	# in the center than to shift it to the left
+	if ($currentPart == 0) {
+		@parts = ( "", $parts[0], "" );
+	}
 
 	return @parts;
 }
