@@ -20,6 +20,7 @@ my @tokens = (
 	'DRAW', 'draw',
 	'CYCLIC', 'cyclic',
 	'ESMILES', 'esmiles',
+	'COLORESMILES', 'coloresmiles',
 	
 	'UNBOND', 'unbond',
 	'BOND_KIND', 'single|double',

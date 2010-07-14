@@ -197,6 +197,30 @@ sub rotate {
 	}
 }
 
+## @method void recolorNodes(struct $color)
+# Sets new color to all nodes.
+# @param $color New color.
+#
+sub recolorNodes {
+	my ( $this, $color ) = @_;
+	
+	foreach my $id ( keys %{$this->{"nodes"}} ) {
+		$this->{"nodes"}->{$id}->{"color"} = $color;
+	}
+}
+
+## @method void recolorBonds(struct $color)
+# Sets new color to all bonds.
+# @param $color New color.
+#
+sub recolorBonds {
+	my ( $this, $color ) = @_;
+	
+	foreach my $i ( 0..@{$this->{"bonds"}}-1 ) {
+		$this->{"bonds"}->[$i]->{"color"} = $color;
+	}
+}
+
 ## @method Generator createGenerator()
 # Creates compound generator.
 #

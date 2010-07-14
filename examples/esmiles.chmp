@@ -20,3 +20,7 @@ compound acetone {
 compound propanoic_acid {
 	esmiles(1, 0, "'H3C''CH2'C()(=O)(O'H')");
 };
+
+compound propanoic_acid2 {
+	coloresmiles(1, 0, "'H3C''CH2'C()(=O)(O'H')", blue, red);
+};

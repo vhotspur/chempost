@@ -256,6 +256,9 @@ compound_command_aux:
 	| compound_command_esmiles {
 		return $T1;
 	}
+	| compound_command_coloresmiles {
+		return $T1;
+	}
 	;
 
 compound_command_empty: {
@@ -416,6 +419,28 @@ compound_command_esmiles:
 		$TT->debug("Parsing ESMILES `%s'.", $esmiles);
 		my $esmilesBuilder = $esmilesParser->parseString($esmiles);
 		$esmilesBuilder->rotate($angle);
+		
+		return $esmilesBuilder;
+	}
+	;
+
+compound_command_coloresmiles:
+	COLORESMILES LPAREN NUMBER COMMA NUMBER COMMA STRING COMMA color COMMA color RPAREN {
+		my $nodeNumber = $T3->{"value"};
+		my $angle = $T5->{"value"};
+		my $esmiles = $T7->{"value"};
+		my $refLine = $T1->{"line"};
+		my $nodeColor = $T9;
+		my $bondColor = $T11;
+		
+		my $esmilesParser = new EsmilesParser();
+		$esmilesParser->init();
+		
+		$TT->debug("Parsing ESMILES `%s'.", $esmiles);
+		my $esmilesBuilder = $esmilesParser->parseString($esmiles);
+		$esmilesBuilder->rotate($angle);
+		$esmilesBuilder->recolorNodes($nodeColor);
+		$esmilesBuilder->recolorBonds($bondColor);
 		
 		return $esmilesBuilder;
 	}
