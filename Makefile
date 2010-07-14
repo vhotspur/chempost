@@ -33,10 +33,17 @@ LIB_SOURCES = \
 
 PARSER_MODULE = $(LOCAL_LIB)/$(PACKAGE)/Parser.pm
 ESMILES_PARSER_MODULE = $(LOCAL_LIB)/$(PACKAGE)/EsmilesParser.pm
+COLORNAMES_MODULE = $(LOCAL_LIB)/$(PACKAGE)/ColorNames.pm
+
+COMPILED_MODULES = \
+	$(COLORNAMES_MODULE) \
+	$(ESMILES_PARSER_MODULE) \
+	$(PARSER_MODULE)
 
 LIB_SOURCES_ALL = \
 	$(PARSER_MODULE) \
 	$(ESMILES_PARSER_MODULE) \
+	$(COLORNAMES_MODULE) \
 	$(LIB_SOURCES)
 
 PERL_EXECUTABLE = perl
@@ -71,7 +78,7 @@ all: compile
 	check-tools \
 	clean distclean
 
-compile: $(PARSER_MODULE) $(ESMILES_PARSER_MODULE)
+compile: $(COMPILED_MODULES)
 
 run: compile
 	$(PERL) ./chempost.pl <sample.chmp
@@ -86,9 +93,10 @@ $(PARSER_MODULE): Parser.y
 	$(YAPP) -v -m Parser -o $@ $<
 	@# replace $T1 with $_[1] etc.
 	@# replace /dev/stdin by the original name
-	sed 's/\$$T\([1-9]\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
+	sed 's/\$$T\([1-9]\+\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
 		| $(YAPP) -m Parser -o - /dev/stdin 2>/dev/null \
 		| sed 's#/dev/stdin#$<#g' >$@
+
 
 $(ESMILES_PARSER_MODULE): EsmilesParser.y
 	@# this one is run to show the errors of the grammar
@@ -100,6 +108,23 @@ $(ESMILES_PARSER_MODULE): EsmilesParser.y
 	sed 's/\$$T\([1-9]\)\>/$$_[\1]/g;s/\$$TT\>/$$_[0]/g' $< \
 		| $(YAPP) -m EsmilesParser -o - /dev/stdin 2>/dev/null \
 		| sed 's#/dev/stdin#$<#g' >$@
+
+$(COLORNAMES_MODULE): colors.txt
+	echo 'package Chemistry::Chempost::ColorNames;' > $@
+	echo 'use Exporter;' >> $@
+	echo '@ISA = qw(Exporter);' >> $@
+	echo '@EXPORT = qw(%colorDatabase);' >> $@
+	echo '' >> $@
+	echo '%colorDatabase = (' >> $@
+	echo '	"names" => [' >> $@
+	cut '-d ' -f 1 <$< | sed 's/.*/\t\t"&",/' >> $@
+	echo '	],' >> $@
+	echo '	"rgb" => [' >> $@
+	cut '-d ' -f 2 <$< | sed 's/.*/\t\t"&",/' >> $@
+	echo '	],' >> $@
+	echo ');' >> $@
+	echo '1;' >> $@
+
 
 
 doc: compile
@@ -155,7 +180,7 @@ clean:
 	$(MAKE) -C examples clean
 
 distclean: clean
-	$(RM) $(PARSER_MODULE) $(ESMILES_PARSER_MODULE)
+	$(RM) $(COMPILED_MODULES)
 	$(RM) *.mps
 	$(MAKE) -C examples distclean
 

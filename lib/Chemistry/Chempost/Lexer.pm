@@ -14,13 +14,17 @@ my @tokens = (
 	'INCLUDE', 'include',
 
 	'NODE', 'node',
+	'COLORNODE', 'colornode',
 	'BOND', 'bond',
+	'COLORBOND', 'colorbond',
 	'DRAW', 'draw',
 	'CYCLIC', 'cyclic',
 	'ESMILES', 'esmiles',
 	
 	'UNBOND', 'unbond',
 	'BOND_KIND', 'single|double',
+	
+	'COLOR', 'red|green|blue|black',
 	
 	'LBRACKET', '[\[]',
 	'RBRACEKT', '[\]]',

@@ -1,4 +1,5 @@
 EXAMPLES = \
+	colors \
 	cresols \
 	cycles \
 	esmiles \
@@ -41,6 +42,7 @@ cycles: cycles.mp
 icresols: icresols.mp
 sample: sample.mp
 esmiles: esmiles.mp
+colors: colors.mp
 
 $(EXAMPLES):
 	$(MPOST) $@.mp

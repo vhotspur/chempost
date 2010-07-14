@@ -7,6 +7,7 @@ use Chemistry::Chempost::Builder;
 use Chemistry::Chempost::Generator;
 use Chemistry::Chempost::Lexer;
 use Chemistry::Chempost::EsmilesParser;
+use Chemistry::Chempost::Colors;
 
 %}
 
@@ -25,11 +26,6 @@ use Chemistry::Chempost::EsmilesParser;
 chempost:
 	includes macro_definitions compound_list {
 		return $T3;
-	}
-	| error {
-		$TT->_recovered();
-		my @result = ();
-		return \@result;
 	}
 	;
 
@@ -139,12 +135,17 @@ compound_list:
 		}
 		return \@result;
 	}
-	|
-	compound_list compound {
+	| compound_list compound {
 		my @result = ( @{$T1}, $T2 );
 		if ($T2 == 0) {
 			@result = ( @{$T1} );
 		}
+		return \@result;
+	}
+	| compound_list error {
+		$TT->_recovered();
+		
+		my @result = ();
 		return \@result;
 	}
 	;
@@ -234,7 +235,13 @@ compound_command_aux:
 	| compound_command_node {
 		return $T1;
 	}
+	| compound_command_colornode {
+		return $T1;
+	}
 	| compound_command_bond {
+		return $T1;
+	}
+	| compound_command_colorbond {
 		return $T1;
 	}
 	| compound_command_unbond {
@@ -264,10 +271,26 @@ compound_command_node:
 	}
 	;
 
+compound_command_colornode:
+	COLORNODE LPAREN NUMBER COMMA STRING COMMA color RPAREN {
+		my $builder = Builder->new();
+		$builder->addNode($T3->{"value"}, $T5->{"value"}, $T7);
+		return $builder;
+	}
+	;
+
 compound_command_bond:
 	BOND LPAREN NUMBER COMMA NUMBER COMMA BOND_KIND COMMA NUMBER RPAREN {
 		my $builder = Builder->new();
 		$builder->addBond($T3->{"value"}, $T5->{"value"}, $T7->{"value"}, $T9->{"value"});
+		return $builder;
+	}
+	;
+
+compound_command_colorbond:
+	COLORBOND LPAREN NUMBER COMMA NUMBER COMMA BOND_KIND COMMA NUMBER COMMA color RPAREN {
+		my $builder = Builder->new();
+		$builder->addBond($T3->{"value"}, $T5->{"value"}, $T7->{"value"}, $T9->{"value"}, $T11);
 		return $builder;
 	}
 	;
@@ -410,6 +433,27 @@ node_number_list:
 	}
 	;
 
+color:
+	COLOR {
+		my %color = (
+			"metapost" => $T1->{"value"},
+		);
+		return \%color;
+	}
+	| STRING {
+		my $color = $T1->{"value"};
+		my $refLine = $T1->{"line"};
+		
+		my $result = Chemistry::Chempost::Colors::recogniseColor($color);
+		
+		if ($result == 0) {
+			$TT->warn($refLine, "Unrecognised color `%s', will use default.", $color);
+		}
+		
+		return $result;
+	}
+	;
+
 %%
 
 ## @method public void init()
@@ -420,6 +464,7 @@ node_number_list:
 sub init {
 	my ( $this ) = @_;
 	$this->{"macros"} = { };
+	$this->{"debug"} = 0;
 }
 
 ## @method public FigureList parseString(string $filename, string $text)
@@ -539,15 +584,40 @@ sub getyyerror {
 sub _parseError {
 	my ( $this ) = @_;
 	my @expected = $this->YYExpect();
-	my $expected = $expected[0];
+	
+	# drop the 'error' from expected
+	for (my $i = 0; $i < @expected; $i++) {
+		if ($expected[$i] eq "error") {
+			splice(@expected, $i, 1);
+			$i--;
+		}
+	}
+	# construct human-readable list of expected tokens
+	my $expected = "";
+	for (my $i = 0; $i < @expected; $i++) {
+		if (@expected > 1) {
+			if ($i + 1 == @expected) {
+				$expected .= " or ";
+			} elsif ($i > 0) {
+				$expected .= ", ";
+			}
+		}
+		$expected .= sprintf("`%s'", $expected[$i]);
+	}
+	
+	if (@expected == 0) {
+		$this->error(0, "Internal error, expected field is empty!");
+		$expected = "compound";
+	}
+	
 	my $curval = $this->YYCurval;
 	if (defined $curval) {
 		my $found = $this->YYCurval->{"value"};
 		my $line = $this->YYCurval->{"line"};
-		$this->error($line, "Expected `%s', found `%s' instead.", $expected, $found);
+		$this->error($line, "Expected %s, found `%s' instead.", $expected, $found);
 	} else {
 		my $line = $this->{"lexer"}->getlinenumber();
-		$this->error($line, "Expected `%s' instead of end of file.", $expected);
+		$this->error($line, "Expected %s instead of end of file.", $expected);
 	}
 		
 }
@@ -567,7 +637,20 @@ sub _recovered {
 #
 sub debug {
 	my ( $this, $format, @params ) = @_;
-	#printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
+	unless ($this->{"debug"}) {
+		return;
+	}
+	
+	printf STDERR "[Parser.y]: %s\n", sprintf $format, @params;
+}
+
+## @method procted void setDebug(bool $debug = true)
+# Turns on/off debugging messages.
+# @param $debug Whether to print debugging messages.
+#
+sub setDebug {
+	my ( $this, $debug ) = ( @_, 1 );
+	$this->{"debug"} = $debug;
 }
 
 ## @method private void _msg(int $line, enum $kind, string $format, ...)
