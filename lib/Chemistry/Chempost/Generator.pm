@@ -27,6 +27,7 @@ sub setIds {
 			"caption" => [ "", "", "" ],
 			"inverse-neighbours-count" => 0,
 			"drawn" => 0,
+			"color" => 0,
 		};
 	}
 }
@@ -67,20 +68,35 @@ sub setNodeInfo {
 		= [ $captionLeft, $captionMiddle, $captionRight ];
 }
 
-## @method void addBond(int $from, int $to, int $type, int $angle)
+## @method void setNodeColor(int $id, struct $color)
+# Sets node color.
+# The structure passed in @p $color shall have @c metapost field with
+# string describing the color in format recognised by MetaPost.
+# @param $id Node id.
+# @param $color Node color.
+#
+sub setNodeColor {
+	my ( $this, $id, $color ) = @_;
+	
+	$this->{"nodes"}->{$id}->{"color"} = $color;
+}
+
+## @method void addBond(int $from, int $to, int $type, int $angle, struct $color)
 # Adds a bond between two nodes.
 # @param $from Starting node.
 # @param $to Target node.
 # @param $type Bond type.
 # @param $angle Bond angle (0 being at 3 o'clock).
+# @param $color Bond color.
 #
 sub addBond {
-	my ( $this, $from, $to, $type, $angle ) = @_;
+	my ( $this, $from, $to, $type, $angle, $color ) = @_;
 
 	push(@{$this->{"nodes"}->{$from}->{"neighbours"}}, {
 		"type" => $type,
 		"target" => $to,
-		"angle" => $angle
+		"angle" => $angle,
+		"color" => $color,
 	});
 	$this->{"nodes"}->{$to}->{"inverse-neighbours-count"}++;
 }
@@ -117,6 +133,53 @@ sub _formatNodeCaption {
 	);
 }
 
+## @method string _getMetapostColor(struct $color, string $defaultColor)
+# Tells color in MetaPost-recognisable manner.
+#
+# The actual is determined by the contents of the $p $color structure.
+# First, if the @c metapost field is present, its color is used.
+# Next, @c rgb field is tested and is expected to be a 3-member array
+# with red, green and blue components within range 0-255.
+# Otherwise, @p $defaultColor is used (which is expected
+# to already be in MetaPost format).
+#
+# @param $color The color structure.
+# @param $defaultColor Default color.
+# @return MetaPost compliant color specification.
+#
+sub _getMetapostColor {
+	my ( $this, $colorStruct, $defaultColor ) = @_;
+	
+	my $color = $defaultColor;
+	
+	if (exists $colorStruct->{"metapost"}) {
+		$color = $colorStruct->{"metapost"};
+	} elsif (exists $colorStruct->{"rgb"}) {
+		my @rgb = @{$colorStruct->{"rgb"}};
+		for (my $i = 0; $i < @rgb; $i++) {
+			$rgb[$i] = ($rgb[$i] + 0.0)/255.0;
+		}
+		$color = sprintf("(%.4f,%.4f,%.4f)", @rgb);
+	}
+	
+	return $color;
+}
+
+## @method string _getNodeMetapostColor(int $nodeId)
+# Tells color of a node in format suitable for MetaPost.
+# @param $nodeId Node id.
+# @return Color of the node in MetaPost format.
+#
+sub _getNodeMetapostColor {
+	my ( $this, $nodeId ) = @_;
+	
+	return $this->_getMetapostColor(
+		$this->{"nodes"}->{$nodeId}->{"color"},
+		"defaultnodecolor");
+	
+	return $color;
+}
+
 ## @method string _drawNode(int $current)
 # Recursively prepares MetaPost output for drawing a node.
 # @param $current Current node (the node to be drawn).
@@ -126,14 +189,16 @@ sub _drawNode {
 	my $result = "";
 	foreach my $pNeighbour ( @{$this->{"nodes"}->{$current}->{"neighbours"}} ) {
 		my $target = $pNeighbour->{"target"};
-		# $result .= sprintf("\tpair C%s;\n", $target);
-		$result .= sprintf("\tC%s := drawnextnode(C%s, %s, %d, %d, %s);\n",
+		
+		$result .= sprintf("\tC%s := drawnextnode(C%s, %s, %d, %d, %s, %s, %s);\n",
 			$target,
 			$current,
 			$this->_formatNodeCaption($current),
 			$pNeighbour->{"angle"},
 			$this->_bondNumber($pNeighbour->{"type"}),
-			$this->_formatNodeCaption($target)
+			$this->_getMetapostColor($pNeighbour->{"color"}, "defaultbondcolor"),
+			$this->_formatNodeCaption($target),
+			$this->_getNodeMetapostColor($target),
 		);
 
 		if ($this->{"nodes"}->{$target}->{"drawn"}) {
@@ -157,9 +222,10 @@ sub generateMetaPost {
 	my $result = "";
 	$result .= sprintf("\tpair C[];\n", $first);
 
-	$result .= sprintf("\tC%s := drawfirstnode( (0,0), \"%s\");\n",
+	$result .= sprintf("\tC%s := drawfirstnode( (0,0), \"%s\", %s);\n",
 		$first,
-		join("", @{$this->{"nodes"}->{$first}->{"caption"}})
+		join("", @{$this->{"nodes"}->{$first}->{"caption"}}),
+		$this->_getNodeMetapostColor($first),
 	);
 
 	$result .= $this->_drawNode($first);

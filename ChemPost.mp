@@ -4,6 +4,9 @@ bondlen := 16pt;
 bondmargin := 2pt;
 bondmarginempty := 0.8pt;
 
+color defaultnodecolor; defaultnodecolor := black;
+color defaultbondcolor; defaultbondcolor := defaultnodecolor;
+
 picture cachePicture[];
 string cacheText[];
 numeric cacheLen; cacheLen = 0;
@@ -200,9 +203,11 @@ enddef;
 % @param numeric bond_type Bond type (either 1, 2 or 3).
 % @param numeric bond_len Lenght of the bond.
 % @param numeric angle Bond angle.
+% @param bool drawit Whether to actually draw the bond.
+% @param color bond_color Color of the bond.
 % @return expr Coordinates of the end point.
 %
-def drawbond(expr start_coords, bond_type, bond_len, angle, drawit) =
+def drawbond(expr start_coords, bond_type, bond_len, angle, drawit, bond_color) =
 	begingroup
 		pair end_coords_virt;
 		end_coords_virt := start_coords + (bond_len, 0);
@@ -237,7 +242,11 @@ def drawbond(expr start_coords, bond_type, bond_len, angle, drawit) =
 		);
 
 		if drawit:
-			draw bond_image shifted start_coords rotatedaround(start_coords, angle);
+			draw bond_image
+				shifted start_coords
+				rotatedaround(start_coords, angle)
+				withcolor bond_color
+				;
 		fi
 
 		result
@@ -247,9 +256,10 @@ enddef;
 %% Draws first node in the compound.
 % @param pair coordinates Starting point.
 % @param string nodetext Node text.
+% @param color nodecolor Node color.
 % @return pair Coordinates of the node (always returns @p coordinates).
 %
-def drawfirstnode(expr coordinates, nodetext) =
+def drawfirstnode(expr coordinates, nodetext, nodecolor) =
 	begingroup
 		picture the_text;
 		the_text := texcacheimage("$" & nodetext & "$");
@@ -258,7 +268,7 @@ def drawfirstnode(expr coordinates, nodetext) =
 		text_width := imgwidth(the_text);
 		text_height := imgheight(the_text);
 
-		draw the_text shifted coordinates;
+		draw the_text shifted coordinates withcolor nodecolor;
 
 		coordinates
 	endgroup
@@ -271,12 +281,14 @@ enddef;
 % @param string prev_right Right part of text at previous node.
 % @param numeric angle Bond angle.
 % @param numeric bond_type Bond type.
+% @param color bond_color Bond color.
 % @param string curr_left Left part of text at current node.
 % @param string curr_center Binding part of text at current node.
 % @param string curr_right Right part of text at current node.
+% @param color node_color Color of the current node.
 % @return pair Coordinates of the node (could be used as @p prev_coords for next node).
 %
-def drawnextnode(expr prev_coords, prev_left, prev_center, prev_right, angle, bond_type, curr_left, curr_center, curr_right) =
+def drawnextnode(expr prev_coords, prev_left, prev_center, prev_right, angle, bond_type, bond_color, curr_left, curr_center, curr_right, node_color) =
 	begingroup
 		string curr_text;
 		curr_text := curr_left & curr_center & curr_right;
@@ -292,19 +304,19 @@ def drawnextnode(expr prev_coords, prev_left, prev_center, prev_right, angle, bo
 		prev_realbind := prev_bindpoint + prev_coords;
 
 		pair curr_realbind;
-		curr_realbind := drawbond(prev_realbind, bond_type, bondlen, angle, true);
+		curr_realbind := drawbond(prev_realbind, bond_type, bondlen, angle, true, bond_color);
 
 		% count coordinates for the current node text
 		pair curr_coords;
 		curr_coords := curr_realbind - curr_bindpoint;
 
-		curr_coords := drawfirstnode(curr_coords, curr_text);
+		curr_coords := drawfirstnode(curr_coords, curr_text, node_color);
 
 		curr_coords
 	endgroup
 enddef;
 
-def drawnextnodefixeddistance(expr prev_coords, prev_left, prev_center, prev_right, angle, bond_type, curr_left, curr_center, curr_right, draw_text) =
+def drawnextnodefixeddistance(expr prev_coords, prev_left, prev_center, prev_right, angle, bond_type, bond_color, curr_left, curr_center, curr_right, draw_text, node_color) =
 	begingroup
 		string curr_text;
 		curr_text := curr_left & curr_center & curr_right;
@@ -341,7 +353,7 @@ def drawnextnodefixeddistance(expr prev_coords, prev_left, prev_center, prev_rig
 		);
 
 		pair curr_realbind;
-		curr_realbind := drawbond(prev_realbind, bond_type, bondlen - bond_cut, angle, true);
+		curr_realbind := drawbond(prev_realbind, bond_type, bond_color, bondlen - bond_cut, angle, true);
 		%curr_realbind := drawbond(prev_realbind, bond_type, bondlen, angle, false);
 
 		% count coordinates for the current node text
@@ -349,7 +361,7 @@ def drawnextnodefixeddistance(expr prev_coords, prev_left, prev_center, prev_rig
 		curr_coords := curr_realbind - curr_bindpoint;
 
 		if draw_text:
-			curr_coords := drawfirstnode(curr_coords, curr_text);
+			curr_coords := drawfirstnode(curr_coords, curr_text, node_color);
 		fi;
 
 		curr_coords
@@ -357,13 +369,13 @@ def drawnextnodefixeddistance(expr prev_coords, prev_left, prev_center, prev_rig
 enddef;
 
 def drawnextnodesimple(expr prev_coords, angle, bond_type) =
-	drawnextnode(prev_coords, "", "", "", angle, bond_type, "", "", "");
+	drawnextnode(prev_coords, "", "", "", angle, bond_type, defaultbondcolor, "", "", "", defaultnodecolor);
 enddef;
 
 def drawbenzen(expr coords) =
 	begingroup
 		pair C[];
-		C1 := drawfirstnode((0,0), "");
+		C1 := drawfirstnode((0,0), "", defaultnodecolor);
 		C2 := drawnextnodesimple(C1, 60, 1);
 		C3 := drawnextnodesimple(C2, 0, 4);
 		C4 := drawnextnodesimple(C3, 300, 1);
