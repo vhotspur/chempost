@@ -5,5 +5,8 @@ chempost-*.tar.gz
 Parser.output
 lib/Chemistry/Chempost/Parser.pm
 
+# Generated color list
+lib/Chemistry/Chempost/ColorNames.pm
+
 # Generated Doxygen documentation
 gendoc/

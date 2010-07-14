@@ -6,6 +6,7 @@ use Data::Dumper;
 use Chemistry::Chempost::Builder;
 use Chemistry::Chempost::Generator;
 use Chemistry::Chempost::Lexer;
+use Chemistry::Chempost::Colors;
 
 %}
 
@@ -421,25 +422,13 @@ color:
 		my $color = $T1->{"value"};
 		my $refLine = $T1->{"line"};
 		
-		if ($color =~ /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/) {
-			# standard web '#RRGGBB' notation
-			my ( $red, $green, $blue ) = ( hex $1, hex $2, hex $3 );
-			my %result = (
-				"rgb" => [ $red, $green, $blue ],
-			);
-			return \%result;
-		} elsif ($color =~ /^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/) {
-			# shortened web '#RGB' notation
-			my ( $red, $green, $blue ) = ( hex $1.$1, hex $2.$2, hex $3.$3 );
-			my %result = (
-				"rgb" => [ $red, $green, $blue ],
-			);
-			return \%result;
-		} else {
-			# format not recognised
+		my $result = Chemistry::Chempost::Colors::recogniseColor($color);
+		
+		if ($result == 0) {
 			$TT->warn($refLine, "Unrecognised color `%s', will use default.", $color);
-			return 0;
 		}
+		
+		return $result;
 	}
 	;
 
