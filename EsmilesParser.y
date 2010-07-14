@@ -62,15 +62,27 @@ bonded_atom_with_branches:
 		my $result = $T1;
 		my @branches = @{$T2};
 		
+		# now, connect the branches
+		# the angles depend on number of branches specified
+		# - 1 branch - connect at the top
+		# - 2 branches - connect first at the top, second at the bottom
+		# - 3-6 branches - clockwise, starting at 12 o'clock, skipping
+		#   3 and 9 o'clock
+		# - more - use only first 6
 		
-		
-		# connect the branches
-		# currently, we enforce two branches
-		while (scalar(@branches) < 2) {
-			push @branches, { "builder" => 0 };
+		my $branchCount = scalar(@branches);
+		if ($branchCount > 6) {
+			$branchCount = 6;
 		}
-		my @angles = ( 270, 90 );
-		foreach my $b ( 0, 1 ) {
+		
+		my @angles;
+		if ($branchCount <= 2) {
+			@angles = ( 90, 270 );
+		} else {
+			@angles = ( 90, 45, 315, 270, 225, 135 );
+		}
+		
+		foreach my $b ( 0..$branchCount-1 ) {
 			if ($branches[$b]->{"builder"}) {
 				$result->{"builder"}->merge($branches[$b]->{"builder"});
 				$result->{"builder"}->addBond($result->{"right-atom-id"},

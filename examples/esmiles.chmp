@@ -16,3 +16,7 @@ compound isobutane3 {
 compound acetone {
 	esmiles(1, 0, "'H3C''C'(=O)'CH3'");
 };
+
+compound propanoic_acid {
+	esmiles(1, 0, "'H3C''CH2'C()(=O)(O'H')");
+};
